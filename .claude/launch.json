@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "job-dashboard",
+      "runtimeExecutable": "py",
+      "runtimeArgs": ["C:\\Users\\yuddu\\Desktop\\cs\\job\\dashboard\\app.py"],
+      "port": 5000
+    }
+  ]
+}
