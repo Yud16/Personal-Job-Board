@@ -4,7 +4,7 @@
     {
       "name": "job-dashboard",
       "runtimeExecutable": "py",
-      "runtimeArgs": ["C:\\Users\\yuddu\\Desktop\\cs\\job\\dashboard\\app.py"],
+      "runtimeArgs": ["C:\\Users\\yuddu\\Desktop\\cs\\projects\\ClaudeIndeedJobBoard\\app.py"],
       "port": 5000
     }
   ]

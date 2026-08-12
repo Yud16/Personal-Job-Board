@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Job Search Dashboard</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1>Job search dashboard</h1>
+    <div class="controls">
+      <select id="marketFilter">
+        <option value="all">All markets</option>
+        <option value="UK">UK</option>
+        <option value="US">US</option>
+      </select>
+      <select id="variantFilter">
+        <option value="all">All variants</option>
+      </select>
+      <div class="status-filter" id="statusFilter"></div>
+      <button id="refreshBtn">Refresh</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="board" id="board">
+      <section class="column" data-tier="strong">
+        <div class="column-header">
+          <span class="column-title">Strong match</span>
+          <span class="badge badge-strong">80+</span>
+          <span class="count" id="count-strong"></span>
+        </div>
+        <div class="cards" id="cards-strong"></div>
+      </section>
+      <section class="column" data-tier="good">
+        <div class="column-header">
+          <span class="column-title">Good match</span>
+          <span class="badge badge-good">70-79</span>
+          <span class="count" id="count-good"></span>
+        </div>
+        <div class="cards" id="cards-good"></div>
+      </section>
+      <section class="column" data-tier="below">
+        <div class="column-header">
+          <span class="column-title">Below threshold</span>
+          <span class="badge badge-below">&lt;70</span>
+          <span class="count" id="count-below"></span>
+        </div>
+        <div class="cards" id="cards-below"></div>
+      </section>
+    </div>
+
+    <p class="empty-state" id="emptyState" hidden>No postings match the current filters.</p>
+  </main>
+
+  <div class="modal-backdrop" id="detailBackdrop" hidden>
+    <section class="detail-panel" id="detailPanel" role="dialog" aria-modal="true">
+      <button class="close-btn" id="closeDetail">&times;</button>
+      <div class="detail-header">
+        <h2 id="detailCompany"></h2>
+        <span class="badge" id="detailScoreBadge"></span>
+      </div>
+      <div class="detail-role" id="detailRole"></div>
+      <div class="detail-meta" id="detailMeta"></div>
+      <h3 class="detail-section-label" id="detailSummaryLabel">Recruiter review</h3>
+      <p class="detail-summary" id="detailSummary"></p>
+      <div class="detail-row">
+        <strong>Status:</strong>
+        <select id="detailStatus"></select>
+      </div>
+      <div class="detail-row" id="detailAppliedRow" hidden>
+        <strong>Applied status (from log):</strong> <span id="detailApplied"></span>
+      </div>
+      <div class="detail-row">
+        <a id="detailUrl" href="#" target="_blank" rel="noopener">View posting</a>
+      </div>
+    </section>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
