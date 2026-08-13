@@ -83,7 +83,6 @@ There is deliberately no "open folder" action anymore — that required local fi
 ## Running it
 
 ```bash
-cd "C:\Users\yuddu\Desktop\cs\projects\ClaudeIndeedJobBoard"
 py app.py
 ```
 
