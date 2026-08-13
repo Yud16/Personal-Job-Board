@@ -151,6 +151,7 @@ main {
 }
 
 .card {
+  position: relative;
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 14px 16px;
@@ -168,9 +169,38 @@ main {
   border-color: var(--text);
 }
 
+.card-delete-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  border-radius: 6px;
+  padding: 0;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.12s ease, background 0.12s ease, color 0.12s ease;
+}
+
+.card:hover .card-delete-btn {
+  opacity: 1;
+}
+
+.card-delete-btn:hover {
+  background: var(--status-rejection-bg);
+  color: var(--status-rejection-text);
+}
+
 .card-company {
   font-weight: 600;
   font-size: 0.98rem;
+  padding-right: 20px;
 }
 
 .card-role {
@@ -323,4 +353,109 @@ main {
   color: var(--text-muted);
   margin-top: 40px;
   text-align: center;
+}
+
+.nav-link {
+  font-size: 0.9rem;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.nav-link:hover {
+  background: #f4f2ee;
+}
+
+.page-hint {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  margin: 0 0 20px;
+  max-width: 720px;
+}
+
+.reply-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 720px;
+}
+
+.reply-card {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  background: #fff;
+}
+
+.reply-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.reply-company {
+  font-weight: 600;
+  font-size: 0.98rem;
+}
+
+.reply-type {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  background: var(--status-not-applied-bg);
+  color: var(--status-not-applied-text);
+}
+
+.reply-type-rejection { background: var(--status-rejection-bg); color: var(--status-rejection-text); }
+.reply-type-interview-request { background: var(--status-interview-bg); color: var(--status-interview-text); }
+.reply-type-application-received { background: var(--status-applied-bg); color: var(--status-applied-text); }
+.reply-type-offer { background: var(--status-landed-bg); color: var(--status-landed-text); }
+
+.reply-role {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  margin-top: 2px;
+}
+
+.reply-subject {
+  font-size: 0.92rem;
+  margin-top: 8px;
+  font-weight: 500;
+}
+
+.reply-snippet {
+  color: var(--text-muted);
+  font-size: 0.86rem;
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+.reply-meta {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  margin-top: 10px;
+}
+
+.reply-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.reply-actions a {
+  color: #2563a8;
+  font-size: 0.88rem;
+}
+
+.reply-actions button {
+  font-size: 0.82rem;
+  padding: 5px 10px;
 }

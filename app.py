@@ -11,6 +11,9 @@ US_CSV = JOB_ROOT / "us_pipeline_log.csv"
 
 DASHBOARD_DIR = Path(__file__).resolve().parent
 STATUS_FILE = DASHBOARD_DIR / "data" / "application_status.json"
+DISMISSED_FILE = DASHBOARD_DIR / "data" / "dismissed.json"
+REPLIES_FILE = DASHBOARD_DIR / "data" / "possible_replies.json"
+DISMISSED_REPLIES_FILE = DASHBOARD_DIR / "data" / "dismissed_replies.json"
 
 DATE_RE = re.compile(r"^(\d{4})-(\d{2})-(\d{2})$")
 
@@ -33,6 +36,49 @@ def save_status_overrides(overrides):
     STATUS_FILE.parent.mkdir(parents=True, exist_ok=True)
     with open(STATUS_FILE, "w", encoding="utf-8") as f:
         json.dump(overrides, f, indent=2, sort_keys=True)
+
+
+def load_dismissed():
+    if not DISMISSED_FILE.exists():
+        return set()
+    try:
+        with open(DISMISSED_FILE, encoding="utf-8") as f:
+            return set(json.load(f))
+    except (json.JSONDecodeError, OSError):
+        return set()
+
+
+def save_dismissed(dismissed):
+    DISMISSED_FILE.parent.mkdir(parents=True, exist_ok=True)
+    with open(DISMISSED_FILE, "w", encoding="utf-8") as f:
+        json.dump(sorted(dismissed), f, indent=2)
+
+
+def load_possible_replies():
+    if not REPLIES_FILE.exists():
+        return []
+    try:
+        with open(REPLIES_FILE, encoding="utf-8") as f:
+            data = json.load(f)
+        return data if isinstance(data, list) else []
+    except (json.JSONDecodeError, OSError):
+        return []
+
+
+def load_dismissed_replies():
+    if not DISMISSED_REPLIES_FILE.exists():
+        return set()
+    try:
+        with open(DISMISSED_REPLIES_FILE, encoding="utf-8") as f:
+            return set(json.load(f))
+    except (json.JSONDecodeError, OSError):
+        return set()
+
+
+def save_dismissed_replies(dismissed):
+    DISMISSED_REPLIES_FILE.parent.mkdir(parents=True, exist_ok=True)
+    with open(DISMISSED_REPLIES_FILE, "w", encoding="utf-8") as f:
+        json.dump(sorted(dismissed), f, indent=2)
 
 
 def posting_key(market, posting_url, date_found, company, role_title):
@@ -72,6 +118,8 @@ def parse_csv(path, market):
             except ValueError:
                 continue
             if not (0 <= score <= 100):
+                continue
+            if score < 50:
                 continue
 
             date_found = (row.get("date_found") or "").strip()
@@ -115,10 +163,17 @@ def index():
     return render_template("index.html")
 
 
+@app.route("/replies")
+def replies_page():
+    return render_template("replies.html")
+
+
 @app.route("/api/postings")
 def api_postings():
     postings = parse_csv(UK_CSV, "UK") + parse_csv(US_CSV, "US")
     overrides = load_status_overrides()
+    dismissed = load_dismissed()
+    postings = [p for p in postings if p["key"] not in dismissed]
     for p in postings:
         if p["key"] in overrides:
             p["status"] = overrides[p["key"]]
@@ -140,6 +195,43 @@ def api_set_status():
     overrides[key] = status
     save_status_overrides(overrides)
     return jsonify({"ok": True, "key": key, "status": status})
+
+
+@app.route("/api/dismiss", methods=["POST"])
+def api_dismiss():
+    data = request.get_json(force=True, silent=True) or {}
+    key = data.get("key")
+
+    if not key:
+        return jsonify({"error": "invalid key"}), 400
+
+    dismissed = load_dismissed()
+    dismissed.add(key)
+    save_dismissed(dismissed)
+    return jsonify({"ok": True, "key": key})
+
+
+@app.route("/api/possible-replies")
+def api_possible_replies():
+    replies = load_possible_replies()
+    dismissed = load_dismissed_replies()
+    replies = [r for r in replies if r.get("thread_id") not in dismissed]
+    replies.sort(key=lambda r: r.get("date", ""), reverse=True)
+    return jsonify(replies)
+
+
+@app.route("/api/dismiss-reply", methods=["POST"])
+def api_dismiss_reply():
+    data = request.get_json(force=True, silent=True) or {}
+    thread_id = data.get("thread_id")
+
+    if not thread_id:
+        return jsonify({"error": "invalid thread_id"}), 400
+
+    dismissed = load_dismissed_replies()
+    dismissed.add(thread_id)
+    save_dismissed_replies(dismissed)
+    return jsonify({"ok": True, "thread_id": thread_id})
 
 
 if __name__ == "__main__":

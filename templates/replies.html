@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Possible replies - Job Search Dashboard</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1>Possible application replies</h1>
+    <div class="controls">
+      <a class="nav-link" href="/">Job board</a>
+      <button id="refreshBtn">Refresh</button>
+    </div>
+  </header>
+
+  <main>
+    <p class="page-hint">Unread emails that look like a company replying to something you applied to. This list is a
+      heuristic guess, not a match to a specific posting, check each one and update its status on the board yourself.</p>
+    <div class="reply-list" id="replyList"></div>
+    <p class="empty-state" id="emptyState" hidden>No unread emails currently look like application replies.</p>
+  </main>
+
+  <script src="/static/replies.js"></script>
+</body>
+</html>

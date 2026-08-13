@@ -4,6 +4,11 @@ let selectedKey = null;
 const STATUS_OPTIONS = ["Not applied yet", "Applied", "Interview", "Rejection", "Landed"];
 let selectedStatuses = new Set(STATUS_OPTIONS);
 
+const TRASH_ICON_SVG = `<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M2.5 4h11M6 4V2.5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1V4M3.5 4l.6 9a1 1 0 0 0 1 .9h5.8a1 1 0 0 0 1-.9l.6-9"/>
+  <path d="M6.5 7v4M9.5 7v4"/>
+</svg>`;
+
 const cardsByTier = {
   strong: document.getElementById("cards-strong"),
   good: document.getElementById("cards-good"),
@@ -145,8 +150,44 @@ function renderCard(p) {
   statusSelect.addEventListener("change", () => setStatus(p, statusSelect.value, statusSelect));
   card.appendChild(statusSelect);
 
+  const deleteBtn = document.createElement("button");
+  deleteBtn.className = "card-delete-btn";
+  deleteBtn.type = "button";
+  deleteBtn.title = "Remove from board";
+  deleteBtn.setAttribute("aria-label", "Remove from board");
+  deleteBtn.innerHTML = TRASH_ICON_SVG;
+  deleteBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    dismissPosting(p);
+  });
+  card.appendChild(deleteBtn);
+
   card.addEventListener("click", () => selectPosting(p.key));
   return card;
+}
+
+async function dismissPosting(p) {
+  if (!confirm(`Remove ${p.company || "this posting"} from the board?`)) return;
+  try {
+    const res = await fetch("/api/dismiss", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ key: p.key }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      alert("Could not remove posting: " + (err.error || res.statusText));
+      return;
+    }
+    postings = postings.filter((x) => x.key !== p.key);
+    if (selectedKey === p.key) {
+      closePanel();
+    } else {
+      render();
+    }
+  } catch (e) {
+    alert("Could not remove posting: " + e.message);
+  }
 }
 
 function badgeClass(tier) {
