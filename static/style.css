@@ -74,6 +74,12 @@ body {
   cursor: pointer;
 }
 
+.status-filter-dismissed {
+  margin-left: 4px;
+  padding-left: 10px !important;
+  border-left: 1px solid var(--border);
+}
+
 .controls {
   display: flex;
   gap: 10px;
@@ -195,6 +201,19 @@ main {
 .card-delete-btn:hover {
   background: var(--status-rejection-bg);
   color: var(--status-rejection-text);
+}
+
+.card-restore-btn:hover {
+  background: var(--status-landed-bg);
+  color: var(--status-landed-text);
+}
+
+.card-dismissed {
+  opacity: 0.6;
+}
+
+.card-dismissed:hover {
+  opacity: 0.85;
 }
 
 .card-company {

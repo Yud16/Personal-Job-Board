@@ -3,10 +3,16 @@ let selectedKey = null;
 
 const STATUS_OPTIONS = ["Not applied yet", "Applied", "Interview", "Rejection", "Landed"];
 let selectedStatuses = new Set(STATUS_OPTIONS);
+let showDismissed = false;
 
 const TRASH_ICON_SVG = `<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
   <path d="M2.5 4h11M6 4V2.5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1V4M3.5 4l.6 9a1 1 0 0 0 1 .9h5.8a1 1 0 0 0 1-.9l.6-9"/>
   <path d="M6.5 7v4M9.5 7v4"/>
+</svg>`;
+
+const RESTORE_ICON_SVG = `<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M2.5 8a5.5 5.5 0 1 0 1.8-4.1"/>
+  <path d="M2.5 2.5v3.2h3.2"/>
 </svg>`;
 
 const cardsByTier = {
@@ -66,6 +72,19 @@ function buildStatusFilter() {
     label.appendChild(document.createTextNode(status));
     statusFilter.appendChild(label);
   }
+
+  const dismissedLabel = document.createElement("label");
+  dismissedLabel.className = "status-filter-dismissed";
+  const dismissedCheckbox = document.createElement("input");
+  dismissedCheckbox.type = "checkbox";
+  dismissedCheckbox.checked = showDismissed;
+  dismissedCheckbox.addEventListener("change", () => {
+    showDismissed = dismissedCheckbox.checked;
+    render();
+  });
+  dismissedLabel.appendChild(dismissedCheckbox);
+  dismissedLabel.appendChild(document.createTextNode("Dismissed"));
+  statusFilter.appendChild(dismissedLabel);
 }
 
 function filteredPostings() {
@@ -74,8 +93,8 @@ function filteredPostings() {
   return postings.filter((p) => {
     if (market !== "all" && p.market !== market) return false;
     if (variant !== "all" && p.resume_variant !== variant) return false;
-    if (!selectedStatuses.has(p.status)) return false;
-    return true;
+    if (p.dismissed) return showDismissed;
+    return selectedStatuses.has(p.status);
   });
 }
 
@@ -109,7 +128,7 @@ function render() {
 
 function renderCard(p) {
   const card = document.createElement("div");
-  card.className = "card" + (p.key === selectedKey ? " selected" : "");
+  card.className = "card" + (p.key === selectedKey ? " selected" : "") + (p.dismissed ? " card-dismissed" : "");
   card.dataset.key = p.key;
 
   const company = document.createElement("div");
@@ -150,24 +169,34 @@ function renderCard(p) {
   statusSelect.addEventListener("change", () => setStatus(p, statusSelect.value, statusSelect));
   card.appendChild(statusSelect);
 
-  const deleteBtn = document.createElement("button");
-  deleteBtn.className = "card-delete-btn";
-  deleteBtn.type = "button";
-  deleteBtn.title = "Remove from board";
-  deleteBtn.setAttribute("aria-label", "Remove from board");
-  deleteBtn.innerHTML = TRASH_ICON_SVG;
-  deleteBtn.addEventListener("click", (e) => {
-    e.stopPropagation();
-    dismissPosting(p);
-  });
-  card.appendChild(deleteBtn);
+  const actionBtn = document.createElement("button");
+  actionBtn.type = "button";
+  if (p.dismissed) {
+    actionBtn.className = "card-delete-btn card-restore-btn";
+    actionBtn.title = "Restore to board";
+    actionBtn.setAttribute("aria-label", "Restore to board");
+    actionBtn.innerHTML = RESTORE_ICON_SVG;
+    actionBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      restorePosting(p);
+    });
+  } else {
+    actionBtn.className = "card-delete-btn";
+    actionBtn.title = "Remove from board";
+    actionBtn.setAttribute("aria-label", "Remove from board");
+    actionBtn.innerHTML = TRASH_ICON_SVG;
+    actionBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      dismissPosting(p);
+    });
+  }
+  card.appendChild(actionBtn);
 
   card.addEventListener("click", () => selectPosting(p.key));
   return card;
 }
 
 async function dismissPosting(p) {
-  if (!confirm(`Remove ${p.company || "this posting"} from the board?`)) return;
   try {
     const res = await fetch("/api/dismiss", {
       method: "POST",
@@ -179,7 +208,7 @@ async function dismissPosting(p) {
       alert("Could not remove posting: " + (err.error || res.statusText));
       return;
     }
-    postings = postings.filter((x) => x.key !== p.key);
+    p.dismissed = true;
     if (selectedKey === p.key) {
       closePanel();
     } else {
@@ -187,6 +216,25 @@ async function dismissPosting(p) {
     }
   } catch (e) {
     alert("Could not remove posting: " + e.message);
+  }
+}
+
+async function restorePosting(p) {
+  try {
+    const res = await fetch("/api/restore", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ key: p.key }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      alert("Could not restore posting: " + (err.error || res.statusText));
+      return;
+    }
+    p.dismissed = false;
+    render();
+  } catch (e) {
+    alert("Could not restore posting: " + e.message);
   }
 }
 

@@ -173,8 +173,8 @@ def api_postings():
     postings = parse_csv(UK_CSV, "UK") + parse_csv(US_CSV, "US")
     overrides = load_status_overrides()
     dismissed = load_dismissed()
-    postings = [p for p in postings if p["key"] not in dismissed]
     for p in postings:
+        p["dismissed"] = p["key"] in dismissed
         if p["key"] in overrides:
             p["status"] = overrides[p["key"]]
         else:
@@ -207,6 +207,20 @@ def api_dismiss():
 
     dismissed = load_dismissed()
     dismissed.add(key)
+    save_dismissed(dismissed)
+    return jsonify({"ok": True, "key": key})
+
+
+@app.route("/api/restore", methods=["POST"])
+def api_restore():
+    data = request.get_json(force=True, silent=True) or {}
+    key = data.get("key")
+
+    if not key:
+        return jsonify({"error": "invalid key"}), 400
+
+    dismissed = load_dismissed()
+    dismissed.discard(key)
     save_dismissed(dismissed)
     return jsonify({"ok": True, "key": key})
 
