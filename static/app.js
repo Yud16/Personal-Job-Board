@@ -108,7 +108,7 @@ function render() {
   const grouped = { strong: [], good: [], below: [] };
   for (const p of filtered) grouped[p.tier].push(p);
   for (const tier of ["strong", "good", "below"]) {
-    grouped[tier].sort((a, b) => b.score - a.score);
+    grouped[tier].sort((a, b) => (b.score ?? -1) - (a.score ?? -1));
   }
 
   for (const tier of ["strong", "good", "below"]) {
@@ -144,11 +144,11 @@ function renderCard(p) {
 
   const variant = document.createElement("span");
   variant.className = "card-variant";
-  variant.textContent = p.resume_variant || "—";
+  variant.textContent = p.resume_variant || p.country_code || "—";
 
   const badge = document.createElement("span");
   badge.className = "badge " + badgeClass(p.tier);
-  badge.textContent = p.score;
+  badge.textContent = p.score === null ? "—" : p.score;
 
   footer.appendChild(variant);
   footer.appendChild(badge);
@@ -270,9 +270,9 @@ function selectPosting(key) {
 
   const scoreBadge = document.getElementById("detailScoreBadge");
   scoreBadge.className = "badge " + badgeClass(p.tier);
-  scoreBadge.textContent = p.score;
+  scoreBadge.textContent = p.score === null ? "—" : p.score;
 
-  const metaParts = [p.market, p.date_found ? `Found ${p.date_found}` : null, p.title_query || null, p.tailored ? "Tailored" : "Not tailored"].filter(Boolean);
+  const metaParts = [p.market, p.country_code || null, p.date_found ? `Found ${p.date_found}` : null, p.title_query || null, p.tailored ? "Tailored" : "Not tailored"].filter(Boolean);
   document.getElementById("detailMeta").textContent = metaParts.join(" · ");
 
   document.getElementById("detailSummaryLabel").hidden = !p.review_summary;
@@ -310,7 +310,8 @@ function selectPosting(key) {
 function summaryFor(p) {
   if (p.review_summary) return p.review_summary;
   if (p.notes) return p.notes;
-  const parts = [`Scored ${p.score}/100 as ${p.resume_variant || "an unspecified variant"}.`];
+  const scorePart = p.score === null ? "Not scored (manually tracked)" : `Scored ${p.score}/100`;
+  const parts = [`${scorePart} as ${p.resume_variant || "an unspecified variant"}.`];
   parts.push(p.tailored ? "Resume and cover letter were tailored." : "Not tailored.");
   return parts.join(" ");
 }

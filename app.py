@@ -8,6 +8,7 @@ from flask import Flask, jsonify, render_template, request
 JOB_ROOT = Path(r"C:\Users\yuddu\Desktop\cs\job")
 UK_CSV = JOB_ROOT / "uk_pipeline_log.csv"
 US_CSV = JOB_ROOT / "us_pipeline_log.csv"
+INTL_CSV = JOB_ROOT / "intl_pipeline_log.csv"
 
 DASHBOARD_DIR = Path(__file__).resolve().parent
 STATUS_FILE = DASHBOARD_DIR / "data" / "application_status.json"
@@ -95,6 +96,8 @@ def extract_variant(raw):
 
 
 def tier_for(score):
+    if score is None:
+        return "below"
     if score >= 80:
         return "strong"
     if score >= 70:
@@ -102,7 +105,7 @@ def tier_for(score):
     return "below"
 
 
-def parse_csv(path, market):
+def parse_csv(path, market, min_score=None):
     postings = []
     if not path.exists():
         return postings
@@ -111,16 +114,16 @@ def parse_csv(path, market):
         reader = csv.DictReader(f)
         for row in reader:
             score_raw = (row.get("score") or "").strip()
-            if not score_raw:
-                continue
-            try:
-                score = int(float(score_raw))
-            except ValueError:
-                continue
-            if not (0 <= score <= 100):
-                continue
-            if score < 50:
-                continue
+            score = None
+            if score_raw:
+                try:
+                    score = int(float(score_raw))
+                except ValueError:
+                    continue
+                if not (0 <= score <= 100):
+                    continue
+                if min_score is not None and score < min_score:
+                    continue
 
             date_found = (row.get("date_found") or "").strip()
             if not DATE_RE.match(date_found):
@@ -138,8 +141,9 @@ def parse_csv(path, market):
                 {
                     "key": posting_key(market, posting_url, date_found, company, role_title),
                     "market": market,
+                    "country_code": (row.get("country_code") or "").strip(),
                     "date_found": date_found,
-                    "title_query": (row.get("title_query") or "").strip(),
+                    "title_query": (row.get("title_query") or row.get("category") or "").strip(),
                     "company": company,
                     "role_title": role_title,
                     "posting_url": posting_url,
@@ -170,7 +174,11 @@ def replies_page():
 
 @app.route("/api/postings")
 def api_postings():
-    postings = parse_csv(UK_CSV, "UK") + parse_csv(US_CSV, "US")
+    postings = (
+        parse_csv(UK_CSV, "UK", min_score=50)
+        + parse_csv(US_CSV, "US", min_score=50)
+        + parse_csv(INTL_CSV, "INTL", min_score=50)
+    )
     overrides = load_status_overrides()
     dismissed = load_dismissed()
     for p in postings:
