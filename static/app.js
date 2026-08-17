@@ -93,7 +93,7 @@ function filteredPostings() {
   return postings.filter((p) => {
     if (market !== "all" && p.market !== market) return false;
     if (variant !== "all" && p.resume_variant !== variant) return false;
-    if (p.dismissed) return showDismissed;
+    if (p.dismissed && !showDismissed) return false;
     return selectedStatuses.has(p.status);
   });
 }
