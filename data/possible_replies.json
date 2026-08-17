@@ -1,5 +1,37 @@
 [
   {
+    "thread_id": "1a0099e1b45bef72",
+    "date": "2026-08-16",
+    "sender": "system@successfactors.com",
+    "company_guess": "PRADCO",
+    "subject": "Thank you for Applying",
+    "snippet": "Thank you for your interest in pursuing a career with PRADCO. Currently, all applications are being reviewed to find the appropriate matches in qualifications, experience, and skill level.",
+    "type_guess": "Application Received",
+    "gmail_url": "https://mail.google.com/mail/u/0/#inbox/1a0099e1b45bef72"
+  },
+  {
+    "thread_id": "1a00916946738142",
+    "date": "2026-08-16",
+    "sender": "noreply@applytojob.com",
+    "company_guess": "WeVote",
+    "role_guess": "Senior Software Engineer (volunteer)",
+    "subject": "Yud, Thank you for your interest in the Senior Software Engineer volunteer role at WeVote! We've received your resume",
+    "snippet": "Following up on your interest in our volunteer Senior Software Engineer role with WeVote. We received your application and a member of the Talent team will follow up soon.",
+    "type_guess": "Application Received",
+    "gmail_url": "https://mail.google.com/mail/u/0/#inbox/1a00916946738142"
+  },
+  {
+    "thread_id": "1a008638d91a14c2",
+    "date": "2026-08-16",
+    "sender": "lennar@myworkday.com",
+    "company_guess": "Lennar",
+    "role_guess": "Software Engineer I",
+    "subject": "Thank You for Your Application!",
+    "snippet": "Thank you for your interest in the Software Engineer I position. We will give careful consideration to your application by reviewing the details you provided against the position criteria.",
+    "type_guess": "Application Received",
+    "gmail_url": "https://mail.google.com/mail/u/0/#inbox/1a008638d91a14c2"
+  },
+  {
     "thread_id": "19f64edb679178d0",
     "date": "2026-07-15",
     "sender": "noreply@recruit.trac.jobs",
