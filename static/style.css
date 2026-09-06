@@ -269,6 +269,13 @@ main {
   opacity: 0.6;
 }
 
+.status-date {
+  display: inline-block;
+  margin-left: 6px;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
 .status-not-applied { background: var(--status-not-applied-bg); color: var(--status-not-applied-text); }
 .status-applied { background: var(--status-applied-bg); color: var(--status-applied-text); }
 .status-interview { background: var(--status-interview-bg); color: var(--status-interview-text); }

@@ -15,6 +15,15 @@ const RESTORE_ICON_SVG = `<svg viewBox="0 0 16 16" width="14" height="14" fill="
   <path d="M2.5 2.5v3.2h3.2"/>
 </svg>`;
 
+const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+function formatShortDate(iso) {
+  if (!iso) return null;
+  const [y, m, d] = iso.split("-").map(Number);
+  if (!y || !m || !d) return iso;
+  return `${MONTH_NAMES[m - 1]} ${d}`;
+}
+
 const cardsByTier = {
   strong: document.getElementById("cards-strong"),
   good: document.getElementById("cards-good"),
@@ -169,6 +178,13 @@ function renderCard(p) {
   statusSelect.addEventListener("change", () => setStatus(p, statusSelect.value, statusSelect));
   card.appendChild(statusSelect);
 
+  if (p.status !== "Not applied yet" && p.status_changed_at) {
+    const statusDate = document.createElement("span");
+    statusDate.className = "status-date";
+    statusDate.textContent = formatShortDate(p.status_changed_at);
+    card.appendChild(statusDate);
+  }
+
   const actionBtn = document.createElement("button");
   actionBtn.type = "button";
   if (p.dismissed) {
@@ -288,6 +304,14 @@ function selectPosting(key) {
   detailStatusSelect.value = p.status;
   detailStatusSelect.onchange = () => setStatus(p, detailStatusSelect.value, detailStatusSelect);
 
+  const detailStatusDate = document.getElementById("detailStatusDate");
+  if (p.status !== "Not applied yet" && p.status_changed_at) {
+    detailStatusDate.textContent = `since ${formatShortDate(p.status_changed_at)}`;
+    detailStatusDate.hidden = false;
+  } else {
+    detailStatusDate.hidden = true;
+  }
+
   const appliedRow = document.getElementById("detailAppliedRow");
   if (p.applied_status_raw) {
     appliedRow.hidden = false;
@@ -332,9 +356,18 @@ async function setStatus(p, newStatus, sourceSelect) {
       targetSelect.value = previous;
       return;
     }
+    const result = await res.json();
     p.status = newStatus;
+    p.status_changed_at = result.status_changed_at || null;
     if (!detailBackdrop.hidden && selectedKey === p.key) {
       detailStatusSelect.value = newStatus;
+      const detailStatusDate = document.getElementById("detailStatusDate");
+      if (p.status !== "Not applied yet" && p.status_changed_at) {
+        detailStatusDate.textContent = `since ${formatShortDate(p.status_changed_at)}`;
+        detailStatusDate.hidden = false;
+      } else {
+        detailStatusDate.hidden = true;
+      }
     }
     render();
   } catch (e) {

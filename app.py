@@ -1,4 +1,5 @@
 import csv
+import datetime
 import json
 import re
 from pathlib import Path
@@ -28,9 +29,18 @@ def load_status_overrides():
         return {}
     try:
         with open(STATUS_FILE, encoding="utf-8") as f:
-            return json.load(f)
+            raw = json.load(f)
     except (json.JSONDecodeError, OSError):
         return {}
+
+    overrides = {}
+    for key, value in raw.items():
+        if isinstance(value, dict):
+            overrides[key] = {"status": value.get("status"), "changed_at": value.get("changed_at")}
+        else:
+            # Legacy plain-string entries predate status-change-date tracking.
+            overrides[key] = {"status": value, "changed_at": None}
+    return overrides
 
 
 def save_status_overrides(overrides):
@@ -184,9 +194,11 @@ def api_postings():
     for p in postings:
         p["dismissed"] = p["key"] in dismissed
         if p["key"] in overrides:
-            p["status"] = overrides[p["key"]]
+            p["status"] = overrides[p["key"]]["status"]
+            p["status_changed_at"] = overrides[p["key"]]["changed_at"]
         else:
             p["status"] = "Applied" if p["applied_status_raw"] else "Not applied yet"
+            p["status_changed_at"] = None
     return jsonify(postings)
 
 
@@ -199,10 +211,11 @@ def api_set_status():
     if not key or status not in STATUS_OPTIONS:
         return jsonify({"error": "invalid key or status"}), 400
 
+    changed_at = datetime.date.today().isoformat()
     overrides = load_status_overrides()
-    overrides[key] = status
+    overrides[key] = {"status": status, "changed_at": changed_at}
     save_status_overrides(overrides)
-    return jsonify({"ok": True, "key": key, "status": status})
+    return jsonify({"ok": True, "key": key, "status": status, "status_changed_at": changed_at})
 
 
 @app.route("/api/dismiss", methods=["POST"])
