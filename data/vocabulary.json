@@ -1,0 +1,230 @@
+[
+  {
+    "term": "Java",
+    "aliases": []
+  },
+  {
+    "term": "Python",
+    "aliases": []
+  },
+  {
+    "term": "TypeScript",
+    "aliases": [
+      "TS"
+    ]
+  },
+  {
+    "term": "JavaScript",
+    "aliases": [
+      "JS"
+    ]
+  },
+  {
+    "term": "Go",
+    "aliases": [
+      "Golang"
+    ]
+  },
+  {
+    "term": "SQL",
+    "aliases": []
+  },
+  {
+    "term": "C",
+    "aliases": []
+  },
+  {
+    "term": "PHP",
+    "aliases": []
+  },
+  {
+    "term": "REST API",
+    "aliases": [
+      "REST APIs",
+      "RESTful"
+    ]
+  },
+  {
+    "term": "Spring Boot",
+    "aliases": []
+  },
+  {
+    "term": "Node.js",
+    "aliases": [
+      "Node"
+    ]
+  },
+  {
+    "term": "React",
+    "aliases": []
+  },
+  {
+    "term": "HTML",
+    "aliases": []
+  },
+  {
+    "term": "CSS",
+    "aliases": []
+  },
+  {
+    "term": "JUnit",
+    "aliases": []
+  },
+  {
+    "term": "Mockito",
+    "aliases": []
+  },
+  {
+    "term": "Git",
+    "aliases": []
+  },
+  {
+    "term": "GitHub Actions",
+    "aliases": []
+  },
+  {
+    "term": "Docker",
+    "aliases": []
+  },
+  {
+    "term": "CI/CD",
+    "aliases": [
+      "continuous integration",
+      "continuous deployment"
+    ]
+  },
+  {
+    "term": "Agile",
+    "aliases": [
+      "Scrum"
+    ]
+  },
+  {
+    "term": "AWS",
+    "aliases": [
+      "Amazon Web Services"
+    ]
+  },
+  {
+    "term": "MongoDB",
+    "aliases": []
+  },
+  {
+    "term": "SQLite",
+    "aliases": []
+  },
+  {
+    "term": "BigQuery",
+    "aliases": [
+      "BigQuery ML"
+    ]
+  },
+  {
+    "term": "Power BI",
+    "aliases": []
+  },
+  {
+    "term": "Windows Server",
+    "aliases": []
+  },
+  {
+    "term": "Active Directory",
+    "aliases": [
+      "AD DS"
+    ]
+  },
+  {
+    "term": "Group Policy",
+    "aliases": []
+  },
+  {
+    "term": "DNS",
+    "aliases": []
+  },
+  {
+    "term": "PowerShell",
+    "aliases": []
+  },
+  {
+    "term": "Linux",
+    "aliases": []
+  },
+  {
+    "term": "systemd",
+    "aliases": []
+  },
+  {
+    "term": "Oracle Cloud Infrastructure",
+    "aliases": [
+      "OCI"
+    ]
+  },
+  {
+    "term": "Flask",
+    "aliases": []
+  },
+  {
+    "term": "Kubernetes",
+    "aliases": [
+      "K8s"
+    ]
+  },
+  {
+    "term": "GitHub",
+    "aliases": []
+  },
+  {
+    "term": "Claude",
+    "aliases": []
+  },
+  {
+    "term": "front-end",
+    "aliases": []
+  },
+  {
+    "term": "backend",
+    "aliases": [
+      "back-end"
+    ]
+  },
+  {
+    "term": "ai",
+    "aliases": []
+  },
+  {
+    "term": "Angular",
+    "aliases": []
+  },
+  {
+    "term": "TESTKEYWORDXYZ",
+    "aliases": []
+  },
+  {
+    "term": "Azure",
+    "aliases": []
+  },
+  {
+    "term": "Grafana",
+    "aliases": []
+  },
+  {
+    "term": "Kafka",
+    "aliases": []
+  },
+  {
+    "term": "Prometheus",
+    "aliases": []
+  },
+  {
+    "term": "Datadog",
+    "aliases": []
+  },
+  {
+    "term": "Vue",
+    "aliases": []
+  },
+  {
+    "term": "database",
+    "aliases": []
+  }
+]
