@@ -1,6 +1,10 @@
 # Job search dashboard
 
-A local Flask app that reads the job-search pipeline's CSV logs and presents them as a kanban board, grouped by match score, with a per-posting detail view and application-status tracking. It is read-only with respect to the pipeline's data — it never modifies the CSVs, triggers searches, or generates documents.
+A local Flask app with three pages sharing one server and one nav bar:
+
+- **`/`** (default) — kanban board of postings read from the job-search pipeline's CSV logs, grouped by match score, with a per-posting detail view and application-status tracking. Read-only with respect to the pipeline's data — it never modifies the CSVs or triggers searches.
+- **`/tailor`** — JD Match Scorer: paste a job description, get a deterministic match score against the bullet library, then tailor and export a resume (`.docx` → `.pdf`) for that posting. This is the one page that *does* write documents and append rows to the pipeline CSVs (via `jd_scorer/export.py`).
+- **`/replies`** — heuristic list of unread emails that look like a company replying to an application.
 
 ## Technology
 
@@ -90,4 +94,4 @@ Then open `http://127.0.0.1:5000`. `app.run(debug=True, ...)` is on, so editing 
 
 ## Out of scope (by design)
 
-This app never writes to `uk_pipeline_log.csv` or `us_pipeline_log.csv`, never triggers a job search, and never generates or touches tailored resume/cover-letter documents. All of that remains the responsibility of the two scheduled pipeline tasks and the `tailor-job-application` skill.
+The board (`/`) and replies (`/replies`) pages never write to `uk_pipeline_log.csv`, `us_pipeline_log.csv`, or `intl_pipeline_log.csv`, and never trigger a job search. Only `/tailor` writes to those CSVs (appending a row on export) and generates resume documents — that logic lives in `jd_scorer/` (ported from the standalone `jobtailor` project) and is independent of the two scheduled pipeline tasks and the `tailor-job-application` skill, which remain the other way postings get tailored/logged.

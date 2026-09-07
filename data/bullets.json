@@ -1,0 +1,155 @@
+[
+  {
+    "id": "education-1",
+    "section": "Education",
+    "entry": "Bachelor of Science in Computer Science, California Polytechnic State University, San Luis Obispo",
+    "text": "Graduated: June 2026",
+    "keywords": [],
+    "included": true,
+    "order": 1
+  },
+  {
+    "id": "poly-planner-1",
+    "section": "Projects",
+    "entry": "Full-Stack Developer, Poly Planner Pro",
+    "text": "TEST TEXT MARKER",
+    "keywords": [
+      "Java",
+      "TESTKEYWORDXYZ"
+    ],
+    "included": false,
+    "order": 1
+  },
+  {
+    "id": "poly-planner-3",
+    "section": "Projects",
+    "entry": "Full-Stack Developer, Poly Planner Pro",
+    "text": "Built a responsive student-facing interface with React and TypeScript so changes to a schedule update immediately, then deployed to AWS for reliable user access.",
+    "keywords": [
+      "React",
+      "TypeScript",
+      "AWS"
+    ],
+    "included": true,
+    "order": 4
+  },
+  {
+    "id": "orderinsite-1",
+    "section": "Work Experience",
+    "entry": "Data Analyst Intern, OrderInsite, California",
+    "text": "Analyzed pharmaceutical inventory and purchasing data for a healthcare supply company using BigQuery ML and SQL, helping the team make better purchasing decisions.",
+    "keywords": [
+      "BigQuery",
+      "SQL"
+    ],
+    "included": true,
+    "order": 1
+  },
+  {
+    "id": "orderinsite-2",
+    "section": "Work Experience",
+    "entry": "Data Analyst Intern, OrderInsite, California",
+    "text": "Used SQL based aggregation to develop a purchasing optimization algorithm that helped reduce procurement costs and used Claude to help write and troubleshoot more complex SQL queries and applying statistical methods for faster development.",
+    "keywords": [
+      "SQL"
+    ],
+    "included": true,
+    "order": 2
+  },
+  {
+    "id": "innoidea-1",
+    "section": "Work Experience",
+    "entry": "Software Engineer Intern, Inno Idea Limited, Hong Kong",
+    "text": "Built and maintained business websites for real clients using JavaScript, HTML, and CSS, fixing problems that came up after each site went live.",
+    "keywords": [
+      "JavaScript",
+      "HTML",
+      "CSS"
+    ],
+    "included": true,
+    "order": 1
+  },
+  {
+    "id": "innoidea-2",
+    "section": "Work Experience",
+    "entry": "Software Engineer Intern, Inno Idea Limited, Hong Kong",
+    "text": "JavaScript was used to build interactive features on client websites, such as forms and page elements that responded to what users clicked or typed.",
+    "keywords": [
+      "JavaScript"
+    ],
+    "included": true,
+    "order": 2
+  },
+  {
+    "id": "innoidea-3",
+    "section": "Work Experience",
+    "entry": "Software Engineer Intern, Inno Idea Limited, Hong Kong",
+    "text": "HTML and CSS were used to build the page structure and styling for commercial websites, including sites for clients such as Manulife Financial Corporation and Shopify, matching each client's brand and layout requirements.",
+    "keywords": [
+      "HTML",
+      "CSS"
+    ],
+    "included": true,
+    "order": 3
+  },
+  {
+    "id": "full-stack-developer-pol-custom-2",
+    "section": "Projects",
+    "entry": "Full-Stack Developer, Poly Planner Pro",
+    "text": "Used Git/GitHub for version control and established a CI/CD workflow with GitHub Actions to automate tests on new code before release, while using Claude to help build front-end features and REST API endpoints faster.",
+    "keywords": [
+      "Git",
+      "GitHub Actions",
+      "CI/CD",
+      "GitHub",
+      "Claude",
+      "REST API",
+      "front-end"
+    ],
+    "included": false,
+    "order": 13
+  },
+  {
+    "id": "full-stack-developer-pol-custom-1",
+    "section": "Projects",
+    "entry": "Full-Stack Developer, Poly Planner Pro",
+    "text": "Built a secure backend with REST APIs in Java and Spring Boot, using JUnit and Mockito unit tests to ensure protected data persistence and multi-user scalability.",
+    "keywords": [
+      "backend",
+      "REST API",
+      "Java",
+      "Spring Boot",
+      "JUnit",
+      "Mockito"
+    ],
+    "included": true,
+    "order": 2
+  },
+  {
+    "id": "full-stack-developer-pol-custom-3",
+    "section": "Projects",
+    "entry": "Full-Stack Developer, Poly Planner Pro",
+    "text": "Used Git/GitHub for version control and established a CI/CD workflow with GitHub Actions to automate tests on new code before release, while using Claude ai to help build front-end features and REST API endpoints faster.",
+    "keywords": [
+      "ai",
+      "Claude",
+      "Git",
+      "GitHub",
+      "CI/CD",
+      "GitHub Actions",
+      "front-end",
+      "REST API"
+    ],
+    "included": true,
+    "order": 14
+  },
+  {
+    "id": "full-stack-developer-pol-custom-4",
+    "section": "Projects",
+    "entry": "Full-Stack Developer, Poly Planner Pro",
+    "text": "Built a website using Java, REST API, and React that helped Cal Poly students plan their class schedules, working directly with the school's Engineering Student Services team in an Agile workflow to reach over 150 students and staff since launch.",
+    "keywords": [],
+    "included": true,
+    "order": 2
+  }
+]

@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Match &amp; Tailor - Job Search Dashboard</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='tailor.css') }}">
+</head>
+<body>
+  <div class="page">
+
+    <header class="app-header">
+      <div class="title-group">
+        <div class="title">JD Match Scorer</div>
+        <div class="subtitle">a quiet, deterministic second opinion</div>
+      </div>
+      <div class="row" style="align-items:center;gap:14px;">
+        <div class="resume-name">reading &nbsp;<strong>YudWong_Resume_Master.docx</strong></div>
+        <nav class="top-nav">
+          <a class="nav-link" href="/">Job board</a>
+          <a class="nav-link" href="/replies">Possible replies</a>
+        </nav>
+      </div>
+    </header>
+
+    <div class="workspace-grid">
+
+      <!-- Column 1: JD input + score -->
+      <div class="col col-score">
+
+        <div class="card">
+          <div class="card-title" style="margin-bottom:12px;">The posting</div>
+          <textarea id="jd-text" class="jd-input" placeholder="Paste the job description here&hellip;"></textarea>
+          <div class="row" style="margin-top:12px;">
+            <input id="posting-url" class="field" type="text" placeholder="posting link, optional" style="flex:1;">
+            <button id="analyze-btn" class="btn btn-primary">Read it</button>
+          </div>
+        </div>
+
+        <div id="score-card" class="card hidden">
+          <div class="score-row">
+            <div class="score-ring">
+              <svg width="88" height="88" viewBox="0 0 88 88">
+                <circle cx="44" cy="44" r="38" fill="none" stroke="#EDE2CF" stroke-width="6"/>
+                <circle id="score-arc" cx="44" cy="44" r="38" fill="none" stroke="#7A8F5C" stroke-width="6"
+                        stroke-linecap="round" stroke-dasharray="238.8" stroke-dashoffset="238.8"/>
+              </svg>
+              <div id="score-value" class="value">&mdash;</div>
+            </div>
+            <div style="flex:1;">
+              <div class="score-caption">Match score</div>
+              <div id="score-verdict" class="score-verdict"></div>
+              <div class="row wrap">
+                <span id="market-pill" class="pill pill-neutral"></span>
+                <span id="eligibility-pill" class="pill pill-good"></span>
+              </div>
+              <div id="location-line" class="muted-note" style="margin-top:8px;"></div>
+            </div>
+          </div>
+        </div>
+
+        <div id="keyword-card" class="card hidden">
+          <div class="card-row">
+            <div class="card-title">Keyword coverage</div>
+            <div class="row" style="align-items:center;">
+              <div id="keyword-count" class="muted-note"></div>
+              <button id="toggle-add-keyword" class="btn btn-ghost" style="padding:5px 12px;font-size:11.5px;">+ Add keyword</button>
+            </div>
+          </div>
+
+          <div id="add-keyword-panel" class="add-bullet-panel" style="margin-bottom:14px;">
+            <div class="field-label">Term</div>
+            <input id="new-keyword-term" class="field" placeholder="e.g. Kubernetes" style="margin-bottom:12px;">
+            <div class="field-label">Aliases <span style="text-transform:none;font-weight:400;">(optional, comma-separated)</span></div>
+            <input id="new-keyword-aliases" class="field" placeholder="e.g. K8s" style="margin-bottom:12px;">
+            <div class="row" style="justify-content:flex-end;">
+              <button id="cancel-add-keyword" class="btn btn-ghost">Cancel</button>
+              <button id="save-keyword" class="btn btn-dark">Add to library</button>
+            </div>
+          </div>
+
+          <div id="matched-chips" class="row wrap" style="margin-bottom:10px;"></div>
+          <div id="missing-chips" class="row wrap"></div>
+          <div id="gap-detail" class="gap-detail hidden"></div>
+        </div>
+
+        <div id="years-card" class="card hidden">
+          <div class="card-title" style="margin-bottom:12px;">Years &amp; eligibility</div>
+          <div class="stat-line">
+            <span style="font-size:12.5px;color:var(--ink-soft);">Years, have / need</span>
+            <span id="years-value" class="stat-value"></span>
+          </div>
+          <div id="years-verdict" style="font-size:12px;font-weight:600;margin-bottom:14px;"></div>
+          <div class="divider"></div>
+          <div id="eligibility-status" class="eligibility-status"></div>
+          <div id="eligibility-note" class="eligibility-note"></div>
+        </div>
+
+      </div>
+
+      <!-- Column 2: bullet library -->
+      <div class="col col-library">
+        <div class="card">
+          <div class="library-header">
+            <div class="card-title">Bullet library</div>
+            <div class="right">
+              <span id="library-count" class="muted-note"></span>
+              <button id="toggle-add-bullet" class="btn btn-primary" style="padding:8px 15px;">+ Add bullet</button>
+            </div>
+          </div>
+
+          <div id="add-bullet-panel" class="add-bullet-panel" style="margin-top:16px;">
+            <div id="add-bullet-panel-title" class="add-bullet-panel-title">Add bullet</div>
+
+            <div class="field-label">Section</div>
+            <div id="section-pills" class="section-pill-group">
+              <span class="section-pill active" data-section="Education">Education</span>
+              <span class="section-pill" data-section="Projects">Projects</span>
+              <span class="section-pill" data-section="Work Experience">Work Experience</span>
+            </div>
+
+            <div class="field-label">Entry</div>
+            <input id="bullet-entry" class="field" list="entry-options" placeholder="e.g. Full-Stack Developer, Poly Planner Pro" style="margin-bottom:12px;">
+            <datalist id="entry-options"></datalist>
+
+            <div class="field-label">Bullet text</div>
+            <textarea id="bullet-text" class="field" rows="3" placeholder="Describe what you built, the tools you used, and the outcome&hellip;" style="margin-bottom:12px;"></textarea>
+
+            <div class="field-label">Keywords</div>
+            <div id="keyword-tags" class="keyword-input-row">
+              <input id="keyword-input" class="keyword-input" placeholder="type to add or create&hellip;">
+            </div>
+            <div id="keyword-suggestions" class="keyword-suggestions"></div>
+
+            <div class="row" style="justify-content:flex-end;">
+              <button id="cancel-add-bullet" class="btn btn-ghost">Cancel</button>
+              <button id="save-bullet" class="btn btn-dark">Add to library</button>
+            </div>
+          </div>
+
+          <div id="bullet-sections" style="margin-top:16px;display:flex;flex-direction:column;gap:16px;"></div>
+        </div>
+      </div>
+
+      <!-- Column 3: live preview -->
+      <div class="col col-preview">
+        <div class="card-row" style="margin:0;">
+          <div class="card-title">Live preview</div>
+          <span class="muted-note">updates as you edit</span>
+        </div>
+        <div id="preview" class="preview-card"></div>
+      </div>
+
+    </div>
+
+    <div class="export-bar">
+      <div class="fields">
+        <input id="export-company" class="field" type="text" placeholder="Company">
+        <input id="export-role" class="field" type="text" placeholder="Role title">
+      </div>
+      <button id="export-btn" class="btn btn-dark" disabled>Export the resume</button>
+    </div>
+    <div id="export-result" class="export-result"></div>
+
+  </div>
+
+  <script src="{{ url_for('static', filename='tailor.js') }}"></script>
+</body>
+</html>
