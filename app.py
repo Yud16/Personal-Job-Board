@@ -122,6 +122,10 @@ def _canonicalize_keywords(keywords, vocabulary):
     return canonical_keywords, vocab_changed
 
 
+def _entry_included_map(layout):
+    return {(e["section"], e["entry"]): e["included"] for e in layout["entries"]}
+
+
 def posting_key(market, posting_url, date_found, company, role_title):
     if posting_url:
         return f"{market}::{posting_url}"
@@ -311,6 +315,7 @@ def api_state():
         "vocabulary": storage.get_vocabulary(),
         "profile": storage.get_profile(),
         "entry_dates": export.get_template_entry_dates(),
+        "layout": storage.get_layout(),
     })
 
 
@@ -328,7 +333,12 @@ def api_analyze():
     vocabulary = storage.get_vocabulary()
     profile = storage.get_profile()
     bullets = storage.get_bullets()
-    included_bullets = [b for b in bullets if b.get("included", True)]
+    layout = storage.get_layout()
+    entry_included = _entry_included_map(layout)
+    included_bullets = [
+        b for b in bullets
+        if b.get("included", True) and entry_included.get((b["section"], b["entry"]), True)
+    ]
 
     if market_override:
         market = market_override
@@ -354,6 +364,7 @@ def api_analyze():
     matched_keywords = [kw for kw in required_keywords if kw in included_keyword_set]
     missing_keywords = [kw for kw in required_keywords if kw not in included_keyword_set]
 
+    visible_bullets = [b for b in bullets if entry_included.get((b["section"], b["entry"]), True)]
     review = scoring.build_review(
         matched_keywords=matched_keywords,
         missing_keywords=missing_keywords,
@@ -361,7 +372,7 @@ def api_analyze():
         years_have=profile["years_of_experience"],
         market=market,
         eligibility=eligibility,
-        bullets=bullets,
+        bullets=visible_bullets,
     )
 
     return jsonify({
@@ -453,6 +464,58 @@ def api_delete_bullet(bullet_id):
     return jsonify({"ok": True})
 
 
+@app.route("/api/entries/<entry_id>", methods=["PATCH"])
+def api_update_entry(entry_id):
+    body = request.get_json(force=True) or {}
+    layout = storage.get_layout()
+    target = next((e for e in layout["entries"] if e["id"] == entry_id), None)
+    if target is None:
+        return jsonify({"error": "entry not found"}), 404
+
+    bullets = None
+    if "entry" in body:
+        new_name = (body["entry"] or "").strip()
+        if not new_name:
+            return jsonify({"error": "entry name cannot be empty"}), 400
+        duplicate = next((e for e in layout["entries"]
+                           if e["id"] != entry_id and e["section"] == target["section"]
+                           and e["entry"].lower() == new_name.lower()), None)
+        if duplicate:
+            return jsonify({"error": "another entry in this section already has that name"}), 409
+        old_name = target["entry"]
+        target["entry"] = new_name
+        if old_name != new_name:
+            bullets = storage.get_bullets()
+            for b in bullets:
+                if b["section"] == target["section"] and b["entry"] == old_name:
+                    b["entry"] = new_name
+            storage.save_bullets(bullets)
+    if "included" in body:
+        target["included"] = bool(body["included"])
+    if "order" in body:
+        target["order"] = body["order"]
+
+    storage.save_layout(layout)
+    response = {"entry": target, "layout": layout}
+    if bullets is not None:
+        response["bullets"] = bullets
+    return jsonify(response)
+
+
+@app.route("/api/sections", methods=["PATCH"])
+def api_update_sections():
+    body = request.get_json(force=True) or {}
+    new_order = body.get("section_order")
+    valid = {"Education", "Projects", "Work Experience"}
+    if not isinstance(new_order, list) or set(new_order) != valid or len(new_order) != 3:
+        return jsonify({"error": "section_order must be a permutation of Education, Projects, Work Experience"}), 400
+
+    layout = storage.get_layout()
+    layout["section_order"] = new_order
+    storage.save_layout(layout)
+    return jsonify({"layout": layout})
+
+
 @app.route("/api/vocabulary", methods=["POST"])
 def api_add_vocabulary():
     body = request.get_json(force=True) or {}
@@ -491,9 +554,10 @@ def api_export():
         return jsonify({"error": "score is required"}), 400
 
     bullets = storage.get_bullets()
+    layout = storage.get_layout()
     try:
         result = export.export_application(
-            bullets=bullets, market=market, country_code=country_code,
+            bullets=bullets, layout=layout, market=market, country_code=country_code,
             company=company, role_title=role_title, posting_url=posting_url,
             score=score, review_summary=review_summary, eligibility_short=eligibility_short,
         )

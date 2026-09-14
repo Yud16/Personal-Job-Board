@@ -3,6 +3,7 @@ const state = {
   vocabulary: [],
   profile: null,
   entryDates: {},
+  layout: { section_order: ["Education", "Projects", "Work Experience"], entries: [] },
   lastAnalysis: null,
   lastJdText: "",
   lastPostingUrl: "",
@@ -15,6 +16,8 @@ const state = {
 };
 
 let dragState = null;
+let entryDragState = null;
+let sectionDragState = null;
 
 const RING_CIRCUMFERENCE = 238.8;
 
@@ -35,6 +38,7 @@ async function loadState() {
   state.vocabulary = data.vocabulary;
   state.profile = data.profile;
   state.entryDates = data.entry_dates || {};
+  state.layout = data.layout || state.layout;
   renderBulletLibrary();
   renderPreview();
   populateEntryOptions();
@@ -66,31 +70,46 @@ function groupBullets() {
   return groups;
 }
 
+function layoutEntriesFor(section) {
+  const list = (state.layout.entries || []).filter((e) => e.section === section);
+  list.sort((a, b) => a.order - b.order);
+  return list;
+}
+
 function renderBulletLibrary() {
   const container = el("bullet-sections");
   container.innerHTML = "";
   const groups = groupBullets();
   let total = 0, pending = 0;
 
-  for (const section of SECTION_ORDER) {
+  const sectionOrder = state.layout.section_order || SECTION_ORDER;
+  for (const section of sectionOrder) {
     const entries = groups[section];
     if (!entries || Object.keys(entries).length === 0) continue;
+
     const sectionDiv = document.createElement("div");
+    sectionDiv.className = "section-block";
+    sectionDiv.draggable = true;
+    attachSectionDragHandlers(sectionDiv, section);
+
     const label = document.createElement("div");
-    label.className = "entry-label";
-    label.textContent = section;
+    label.className = "entry-label section-label-row";
+    const sectionHandle = document.createElement("span");
+    sectionHandle.className = "drag-handle";
+    sectionHandle.textContent = "⠿";
+    sectionHandle.title = "Drag to reorder sections";
+    label.appendChild(sectionHandle);
+    label.appendChild(document.createTextNode(section));
     sectionDiv.appendChild(label);
 
-    for (const entry of Object.keys(entries)) {
+    const layoutEntries = layoutEntriesFor(section).filter((e) => entries[e.entry]);
+    for (const layoutEntry of layoutEntries) {
+      const entryBullets = entries[layoutEntry.entry] || [];
       const entryDiv = document.createElement("div");
-      entryDiv.className = "entry-group";
-      if (Object.keys(entries).length > 1 || section !== "Education") {
-        const entryTitle = document.createElement("div");
-        entryTitle.style.cssText = "font-size:12px;font-weight:700;color:var(--ink-soft);margin:6px 0 2px 0;";
-        entryTitle.textContent = entry;
-        if (section !== "Education") entryDiv.appendChild(entryTitle);
-      }
-      for (const b of entries[entry]) {
+      entryDiv.className = "entry-group" + (layoutEntry.included ? "" : " entry-hidden");
+      entryDiv.appendChild(renderEntryHeader(layoutEntry));
+
+      for (const b of entryBullets) {
         total++;
         if (!b.included) pending++;
         entryDiv.appendChild(renderBulletRow(b));
@@ -105,18 +124,252 @@ function renderBulletLibrary() {
     : `${total} lines`;
 }
 
+function renderEntryHeader(layoutEntry) {
+  const row = document.createElement("div");
+  row.className = "entry-header";
+  row.draggable = true;
+  attachEntryDragHandlers(row, layoutEntry);
+
+  const handle = document.createElement("span");
+  handle.className = "drag-handle";
+  handle.textContent = "⠿";
+  handle.title = "Drag to reorder";
+  row.appendChild(handle);
+
+  const title = document.createElement("span");
+  title.className = "entry-title";
+  title.textContent = layoutEntry.entry;
+  row.appendChild(title);
+  if (!layoutEntry.included) {
+    const badge = document.createElement("span");
+    badge.className = "badge";
+    badge.textContent = "HIDDEN";
+    row.appendChild(badge);
+  }
+
+  const actions = document.createElement("div");
+  actions.className = "row-actions";
+
+  const editBtn = document.createElement("button");
+  editBtn.className = "icon-btn";
+  editBtn.title = "Rename entry";
+  editBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>';
+  editBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    startEditEntryTitle(row, title, layoutEntry);
+  });
+  actions.appendChild(editBtn);
+
+  const toggleBtn = document.createElement("button");
+  toggleBtn.className = "icon-btn";
+  toggleBtn.title = layoutEntry.included ? "Hide this entry from the resume" : "Show this entry on the resume";
+  toggleBtn.innerHTML = layoutEntry.included
+    ? '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>'
+    : '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 19c-7 0-11-7-11-7a18.5 18.5 0 0 1 4.22-5.06M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 7 11 7a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+  toggleBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    toggleEntryIncluded(layoutEntry.id, !layoutEntry.included);
+  });
+  actions.appendChild(toggleBtn);
+
+  row.appendChild(actions);
+  return row;
+}
+
+function startEditEntryTitle(row, titleSpan, layoutEntry) {
+  const input = document.createElement("input");
+  input.className = "entry-title-input";
+  input.value = layoutEntry.entry;
+  row.replaceChild(input, titleSpan);
+  input.focus();
+  input.select();
+
+  let finished = false;
+  const finish = async (commit) => {
+    if (finished) return;
+    finished = true;
+    if (commit) {
+      const newName = input.value.trim();
+      if (newName && newName !== layoutEntry.entry) {
+        await renameEntry(layoutEntry.id, newName);
+        return;
+      }
+    }
+    if (input.parentNode === row) row.replaceChild(titleSpan, input);
+  };
+  input.addEventListener("blur", () => finish(true));
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); finish(true); }
+    else if (e.key === "Escape") { e.preventDefault(); finish(false); }
+  });
+}
+
+async function renameEntry(entryId, newName) {
+  const res = await fetch(`/api/entries/${entryId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ entry: newName }),
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    alert(data.error || "Could not rename this entry.");
+    renderBulletLibrary();
+    return;
+  }
+  state.layout = data.layout;
+  if (data.bullets) state.bullets = data.bullets;
+  renderBulletLibrary();
+  renderPreview();
+  populateEntryOptions();
+  if (state.lastJdText) await runAnalyze();
+}
+
+async function toggleEntryIncluded(entryId, included) {
+  const res = await fetch(`/api/entries/${entryId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ included }),
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    alert(data.error || "Could not update this entry.");
+    return;
+  }
+  state.layout = data.layout;
+  renderBulletLibrary();
+  renderPreview();
+  if (state.lastJdText) await runAnalyze();
+}
+
+function attachEntryDragHandlers(row, layoutEntry) {
+  row.addEventListener("dragstart", (e) => {
+    e.stopPropagation();
+    entryDragState = { id: layoutEntry.id, section: layoutEntry.section };
+    row.classList.add("dragging");
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", layoutEntry.id);
+  });
+  row.addEventListener("dragend", (e) => {
+    e.stopPropagation();
+    row.classList.remove("dragging");
+    document.querySelectorAll(".entry-header.drag-over").forEach((r) => r.classList.remove("drag-over"));
+    entryDragState = null;
+  });
+  row.addEventListener("dragover", (e) => {
+    if (!entryDragState || entryDragState.id === layoutEntry.id || entryDragState.section !== layoutEntry.section) return;
+    e.preventDefault();
+    e.stopPropagation();
+    row.classList.add("drag-over");
+  });
+  row.addEventListener("dragleave", (e) => {
+    e.stopPropagation();
+    row.classList.remove("drag-over");
+  });
+  row.addEventListener("drop", async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    row.classList.remove("drag-over");
+    if (!entryDragState || entryDragState.id === layoutEntry.id) return;
+    if (entryDragState.section !== layoutEntry.section) return;
+    const draggedId = entryDragState.id;
+    entryDragState = null;
+    await reorderEntries(layoutEntry.section, draggedId, layoutEntry.id);
+  });
+}
+
+async function reorderEntries(section, draggedId, targetId) {
+  const group = layoutEntriesFor(section);
+  const fromIdx = group.findIndex((e) => e.id === draggedId);
+  if (fromIdx === -1) return;
+  const [moved] = group.splice(fromIdx, 1);
+  const toIdx = group.findIndex((e) => e.id === targetId);
+  if (toIdx === -1) return;
+  group.splice(toIdx, 0, moved);
+
+  const updates = [];
+  group.forEach((e, i) => {
+    const newOrder = i + 1;
+    if (e.order !== newOrder) {
+      e.order = newOrder;
+      updates.push(fetch(`/api/entries/${e.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ order: newOrder }),
+      }));
+    }
+  });
+  await Promise.all(updates);
+  renderBulletLibrary();
+  renderPreview();
+}
+
+function attachSectionDragHandlers(sectionDiv, section) {
+  sectionDiv.addEventListener("dragstart", (e) => {
+    if (entryDragState) return;
+    sectionDragState = section;
+    sectionDiv.classList.add("dragging");
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", section);
+  });
+  sectionDiv.addEventListener("dragend", () => {
+    sectionDiv.classList.remove("dragging");
+    document.querySelectorAll(".section-block.drag-over").forEach((s) => s.classList.remove("drag-over"));
+    sectionDragState = null;
+  });
+  sectionDiv.addEventListener("dragover", (e) => {
+    if (!sectionDragState || sectionDragState === section) return;
+    e.preventDefault();
+    sectionDiv.classList.add("drag-over");
+  });
+  sectionDiv.addEventListener("dragleave", () => sectionDiv.classList.remove("drag-over"));
+  sectionDiv.addEventListener("drop", async (e) => {
+    e.preventDefault();
+    sectionDiv.classList.remove("drag-over");
+    if (!sectionDragState || sectionDragState === section) return;
+    const draggedSection = sectionDragState;
+    sectionDragState = null;
+    await reorderSections(draggedSection, section);
+  });
+}
+
+async function reorderSections(draggedSection, targetSection) {
+  const order = (state.layout.section_order || SECTION_ORDER).slice();
+  const fromIdx = order.indexOf(draggedSection);
+  if (fromIdx === -1) return;
+  order.splice(fromIdx, 1);
+  const toIdx = order.indexOf(targetSection);
+  if (toIdx === -1) return;
+  order.splice(toIdx, 0, draggedSection);
+
+  const res = await fetch("/api/sections", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ section_order: order }),
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    alert(data.error || "Could not reorder sections.");
+    return;
+  }
+  state.layout = data.layout;
+  renderBulletLibrary();
+  renderPreview();
+}
+
 function renderBulletRow(bullet) {
   const row = document.createElement("div");
   row.className = "bullet-row" + (bullet.included ? "" : " excluded pending");
   row.draggable = true;
 
   row.addEventListener("dragstart", (e) => {
+    e.stopPropagation();
     dragState = { id: bullet.id, section: bullet.section, entry: bullet.entry };
     row.classList.add("dragging");
     e.dataTransfer.effectAllowed = "move";
     e.dataTransfer.setData("text/plain", bullet.id);
   });
-  row.addEventListener("dragend", () => {
+  row.addEventListener("dragend", (e) => {
+    e.stopPropagation();
     row.classList.remove("dragging");
     document.querySelectorAll(".bullet-row.drag-over").forEach((r) => r.classList.remove("drag-over"));
     dragState = null;
@@ -125,11 +378,16 @@ function renderBulletRow(bullet) {
     if (!dragState || dragState.id === bullet.id
       || dragState.section !== bullet.section || dragState.entry !== bullet.entry) return;
     e.preventDefault();
+    e.stopPropagation();
     row.classList.add("drag-over");
   });
-  row.addEventListener("dragleave", () => row.classList.remove("drag-over"));
+  row.addEventListener("dragleave", (e) => {
+    e.stopPropagation();
+    row.classList.remove("drag-over");
+  });
   row.addEventListener("drop", async (e) => {
     e.preventDefault();
+    e.stopPropagation();
     row.classList.remove("drag-over");
     if (!dragState || dragState.id === bullet.id) return;
     if (dragState.section !== bullet.section || dragState.entry !== bullet.entry) return;
@@ -263,10 +521,13 @@ function populateEntryOptions() {
 
 // --- live preview -------------------------------------------------------------
 
-function renderEntryRow(entry) {
-  const date = state.entryDates[entry];
+function renderEntryRow(layoutEntry) {
+  // Dates live only in the master template, keyed by an entry's original
+  // name (template_key), so a rename doesn't lose its date here either --
+  // matches how export finds the same real heading after a rename.
+  const date = state.entryDates[layoutEntry.template_key || layoutEntry.entry];
   const dateHtml = date ? `<span class="date">${escapeHtml(date)}</span>` : "";
-  return `<div class="preview-entry-row"><span>${escapeHtml(entry)}</span>${dateHtml}</div>`;
+  return `<div class="preview-entry-row"><span>${escapeHtml(layoutEntry.entry)}</span>${dateHtml}</div>`;
 }
 
 function renderPreview() {
@@ -278,35 +539,22 @@ function renderPreview() {
       <div class="preview-contact">323.794.6504 &nbsp;|&nbsp; <span class="link-blue">yudduy11@gmail.com</span> &nbsp;|&nbsp; <span class="link-blue">GitHub</span> &nbsp;|&nbsp; <span class="link-blue">LinkedIn</span> &nbsp;|&nbsp; <span class="link-blue">Portfolio</span></div>
     </div>`;
 
-  // Education
-  const eduEntries = groups["Education"] || {};
-  const eduEntry = Object.keys(eduEntries)[0];
-  if (eduEntry) {
-    const bullets = eduEntries[eduEntry].filter((b) => b.included);
-    html += `<div class="preview-section-title">Education</div>`;
-    html += `<div class="preview-entry-row"><span>${escapeHtml(eduEntry)}</span>`
-      + `<span class="date">${escapeHtml(bullets[0] ? bullets[0].text : "")}</span></div>`;
-  }
+  const sectionOrder = state.layout.section_order || SECTION_ORDER;
+  for (const section of sectionOrder) {
+    const sectionGroups = groups[section] || {};
+    const sectionEntries = layoutEntriesFor(section).filter((e) => e.included && sectionGroups[e.entry]);
+    if (sectionEntries.length === 0) continue;
 
-  // Projects
-  const projEntries = groups["Projects"] || {};
-  if (Object.keys(projEntries).length) {
-    html += `<div class="preview-section-title">Projects</div>`;
-    for (const entry of Object.keys(projEntries)) {
-      const bullets = projEntries[entry].filter((b) => b.included);
-      html += renderEntryRow(entry);
-      html += `<ul class="preview-list">${bullets.map((b) => `<li>${escapeHtml(b.text)}</li>`).join("")}</ul>`;
-    }
-  }
-
-  // Work Experience
-  const workEntries = groups["Work Experience"] || {};
-  if (Object.keys(workEntries).length) {
-    html += `<div class="preview-section-title">Work Experience</div>`;
-    for (const entry of Object.keys(workEntries)) {
-      const bullets = workEntries[entry].filter((b) => b.included);
-      html += renderEntryRow(entry);
-      html += `<ul class="preview-list">${bullets.map((b) => `<li>${escapeHtml(b.text)}</li>`).join("")}</ul>`;
+    html += `<div class="preview-section-title">${escapeHtml(section)}</div>`;
+    for (const layoutEntry of sectionEntries) {
+      const bullets = sectionGroups[layoutEntry.entry].filter((b) => b.included);
+      if (section === "Education") {
+        html += `<div class="preview-entry-row"><span>${escapeHtml(layoutEntry.entry)}</span>`
+          + `<span class="date">${escapeHtml(bullets[0] ? bullets[0].text : "")}</span></div>`;
+      } else {
+        html += renderEntryRow(layoutEntry);
+        html += `<ul class="preview-list">${bullets.map((b) => `<li>${escapeHtml(b.text)}</li>`).join("")}</ul>`;
+      }
     }
   }
 

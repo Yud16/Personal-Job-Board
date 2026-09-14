@@ -48,6 +48,24 @@ def _collapse_to_single_run(paragraph, text):
         r.text = ""
 
 
+def _rename_heading_prefix(paragraph, new_name):
+    """Replaces just the entry-name portion of a heading paragraph (every
+    run before the tab that separates name from date) with new_name, leaving
+    the tab run and any date run(s) after it completely untouched. Every
+    entry heading in the real template keeps the tab as its own isolated
+    run, so this preserves a real date through a rename. Falls back to a
+    full collapse if there's no tab run to anchor on.
+    """
+    runs = paragraph.runs
+    tab_idx = next((i for i, r in enumerate(runs) if "\t" in r.text), None)
+    if tab_idx is None:
+        _collapse_to_single_run(paragraph, new_name)
+        return
+    runs[0].text = new_name
+    for r in runs[1:tab_idx]:
+        r.text = ""
+
+
 def get_template_entry_dates():
     """Reads the master template's entry heading lines and returns a dict of
     {entry text before the tab: date text after the tab}, so the live preview
@@ -68,16 +86,33 @@ def get_template_entry_dates():
     return dates
 
 
-def render_resume_docx(bullets, output_path):
-    """Copies the master template and replaces bullet-paragraph text in place,
-    preserving formatting. Never touches the name/contact block or entry
-    heading lines (title, company, dates) -- only the bullet body paragraphs.
+SECTIONS = ("Education", "Projects", "Work Experience")
+
+
+def render_resume_docx(bullets, layout, output_path):
+    """Copies the master template and rebuilds it to reflect the current
+    bullets plus the entry hide/reorder state and section order from
+    layout.json. An entry that's simply kept or reordered reuses its exact
+    original heading paragraph in place (preserving real formatting and any
+    date text) -- only its bullet-list body is regenerated. Only a genuinely
+    new or renamed entry (whose name no longer matches anything in the
+    template) falls back to cloning the section's last known heading/list
+    formatting, which means it renders with no date, same as before: dates
+    live only in the one real template, per get_template_entry_dates().
+    Hidden entries are removed entirely. Sections are physically relocated
+    to match layout["section_order"], carrying their real formatting with
+    them.
     """
     if not TEMPLATE_PATH.exists():
         raise ExportError(f"Resume template not found at {TEMPLATE_PATH}")
 
+    entry_included = {(e["section"], e["entry"]): e["included"] for e in layout["entries"]}
+    section_order = layout.get("section_order") or list(SECTIONS)
+
     shutil.copyfile(TEMPLATE_PATH, output_path)
     document = docx.Document(str(output_path))
+    body = document.element.body
+    doc_parent = document.paragraphs[0]._parent
     original_paragraphs = list(document.paragraphs)
     n = len(original_paragraphs)
 
@@ -86,14 +121,27 @@ def render_resume_docx(bullets, output_path):
         if not b.get("included", True):
             continue
         key = (b["section"], b["entry"])
+        if not entry_included.get(key, True):
+            continue
         groups.setdefault(key, []).append(b)
     for key in groups:
         groups[key].sort(key=lambda b: b["order"])
 
-    entry_lookup = {entry.strip(): (section, entry) for (section, entry) in groups}
-    handled_keys = set()
-    last_heading_p = {}   # section -> lxml element, for appending brand-new entries
-    last_list_template = {}  # section -> lxml element
+    # Keyed by each entry's stable template_key (its name at the time its
+    # layout record was created), not its current display name, so a rename
+    # doesn't lose track of that entry's real heading in the template.
+    entry_lookup = {}
+    for e in layout["entries"]:
+        template_text = (e.get("template_key") or e["entry"]).strip()
+        entry_lookup[template_text] = (e["section"], e["entry"])
+
+    # --- Pass 1: walk the original template, recording each section header
+    # element, each recognized entry's original element block, and a
+    # heading/list template per section for cloning new/renamed entries.
+    section_header_el = {}
+    recognized = {}  # (section, entry) -> {"heading": el, "list_items": [el, ...]}
+    last_heading_template = {}
+    last_list_template = {}
 
     i = 0
     while i < n:
@@ -105,69 +153,130 @@ def render_resume_docx(bullets, output_path):
         heading_text = p.text.split("\t")[0].strip()
         matched_key = entry_lookup.get(heading_text)
 
-        # track section headers as we pass them, to know which section we're in
-        for section in ("Education", "Projects", "Work Experience"):
+        for section in SECTIONS:
             if p.text.strip() == section:
-                current_section = section
+                section_header_el[section] = p._p
 
         if matched_key is None:
             i += 1
             continue
 
         section, entry = matched_key
-        handled_keys.add(matched_key)
-        bullet_list = groups[matched_key]
-        last_heading_p[section] = p._p
+        last_heading_template[section] = deepcopy(p._p)
 
         if section == "Education":
-            if bullet_list and len(p.runs) >= 2:
-                p.runs[-1].text = bullet_list[0]["text"]
+            recognized[matched_key] = {"heading": p._p, "list_items": []}
             i += 1
             continue
 
         j = i + 1
-        list_paragraphs = []
+        list_els = []
         while j < n and original_paragraphs[j].style.name == "List Paragraph":
-            list_paragraphs.append(original_paragraphs[j])
+            list_els.append(original_paragraphs[j]._p)
             j += 1
-
-        template_element = deepcopy(list_paragraphs[0]._p) if list_paragraphs else last_list_template.get(section)
-        if template_element is not None:
-            last_list_template[section] = template_element
-
-        for lp in list_paragraphs:
-            lp._p.getparent().remove(lp._p)
-
-        if bullet_list and template_element is not None:
-            anchor_p = p._p
-            for bullet in bullet_list:
-                new_p = deepcopy(template_element)
-                anchor_p.addnext(new_p)
-                anchor_p = new_p
-                _collapse_to_single_run(Paragraph(new_p, p._parent), bullet["text"])
-
+        if list_els:
+            last_list_template[section] = deepcopy(list_els[0])
+        recognized[(section, entry)] = {"heading": p._p, "list_items": list_els}
         i = j
 
-    # Any bullet groups whose entry wasn't found anywhere in the template are
-    # brand-new entries added through the app -- append them at the end of
-    # their section using the last known heading/bullet formatting in it.
-    leftover = [key for key in groups if key not in handled_keys and key[0] != "Education"]
-    for section, entry in leftover:
-        heading_anchor = last_heading_p.get(section)
-        list_template = last_list_template.get(section)
-        if heading_anchor is None or list_template is None:
-            continue  # no formatting to clone from; skip rather than guess
-        new_heading = deepcopy(heading_anchor)
-        heading_anchor.addnext(new_heading)
-        heading_paragraph = Paragraph(new_heading, document.paragraphs[0]._parent)
-        _collapse_to_single_run(heading_paragraph, entry)
+    # --- Pass 2: detach every recognized entry's original elements. Hidden
+    # or dropped ones simply never get reinserted below; kept ones get
+    # rebuilt fresh (their heading is reused, their bullet list regenerated).
+    for block in recognized.values():
+        for el in [block["heading"]] + block["list_items"]:
+            parent = el.getparent()
+            if parent is not None:
+                parent.remove(el)
 
-        anchor_p = new_heading
-        for bullet in groups[(section, entry)]:
-            new_p = deepcopy(list_template)
-            anchor_p.addnext(new_p)
-            anchor_p = new_p
-            _collapse_to_single_run(Paragraph(new_p, document.paragraphs[0]._parent), bullet["text"])
+    # --- Pass 3: rebuild each section's entries in the desired order,
+    # immediately after that section's header.
+    for section in SECTIONS:
+        header_el = section_header_el.get(section)
+        if header_el is None:
+            continue
+        section_entries = [e for e in layout["entries"] if e["section"] == section and e["included"]]
+        section_entries.sort(key=lambda e: e["order"])
+
+        if not section_entries:
+            # Every entry in this section is hidden -- drop the section
+            # header too, so an empty section doesn't show up with nothing
+            # under it (matches the live preview, which does the same).
+            parent = header_el.getparent()
+            if parent is not None:
+                parent.remove(header_el)
+            del section_header_el[section]
+            continue
+
+        anchor = header_el
+        for e in section_entries:
+            key = (e["section"], e["entry"])
+            bullet_list = groups.get(key, [])
+            block = recognized.get(key)
+
+            if block is not None:
+                heading_el = block["heading"]
+                anchor.addnext(heading_el)
+                anchor = heading_el
+                heading_paragraph = Paragraph(heading_el, doc_parent)
+                if e["entry"] != e.get("template_key", e["entry"]):
+                    _rename_heading_prefix(heading_paragraph, e["entry"])
+                if section == "Education" and bullet_list:
+                    if len(heading_paragraph.runs) >= 2:
+                        heading_paragraph.runs[-1].text = bullet_list[0]["text"]
+            else:
+                template_el = last_heading_template.get(section)
+                if template_el is None:
+                    continue  # no formatting to clone from; skip rather than guess
+                heading_el = deepcopy(template_el)
+                anchor.addnext(heading_el)
+                anchor = heading_el
+                _collapse_to_single_run(Paragraph(heading_el, doc_parent), e["entry"])
+
+            if section == "Education":
+                continue
+
+            list_template = last_list_template.get(section)
+            if list_template is None:
+                continue
+            for bullet in bullet_list:
+                new_p = deepcopy(list_template)
+                anchor.addnext(new_p)
+                anchor = new_p
+                _collapse_to_single_run(Paragraph(new_p, doc_parent), bullet["text"])
+
+    # --- Pass 4: reorder whole sections to match section_order, physically
+    # relocating each section's header and everything now living under it.
+    present_sections = [s for s in SECTIONS if s in section_header_el]
+    if len(present_sections) > 1:
+        header_els = {s: section_header_el[s] for s in present_sections}
+
+        def collect_range(s):
+            head = header_els[s]
+            stop_set = {el for s2, el in header_els.items() if s2 != s}
+            elements = [head]
+            for sib in head.itersiblings():
+                if sib in stop_set:
+                    break
+                elements.append(sib)
+            return elements
+
+        ranges = {s: collect_range(s) for s in present_sections}
+        first_section = min(present_sections, key=lambda s: body.index(header_els[s]))
+        insertion_anchor = header_els[first_section].getprevious()
+
+        for s in present_sections:
+            for el in ranges[s]:
+                parent = el.getparent()
+                if parent is not None:
+                    parent.remove(el)
+
+        for s in [s for s in section_order if s in present_sections]:
+            for el in ranges[s]:
+                if insertion_anchor is None:
+                    body.insert(0, el)
+                else:
+                    insertion_anchor.addnext(el)
+                insertion_anchor = el
 
     document.save(str(output_path))
     return output_path
@@ -183,7 +292,7 @@ def convert_to_pdf(docx_path, pdf_path):
     return pdf_path
 
 
-def verify_pdf(pdf_path):
+def verify_pdf(pdf_path, expected_sections=SECTIONS):
     try:
         result = subprocess.run(
             ["pdftotext", "-layout", str(pdf_path), "-"],
@@ -195,7 +304,7 @@ def verify_pdf(pdf_path):
         return {"ok": False, "note": f"pdftotext failed: {e.stderr}"}
 
     text = result.stdout
-    required = ["Yud Wong", "Education", "Projects", "Work Experience"]
+    required = ["Yud Wong", *expected_sections]
     missing = [r for r in required if r not in text]
     if missing:
         return {"ok": False, "note": f"PDF missing expected sections: {', '.join(missing)}"}
@@ -293,16 +402,20 @@ def build_csv_row(*, market, country_code, company, role_title, posting_url, sco
 
 # --- orchestration ---------------------------------------------------------------
 
-def export_application(*, bullets, market, country_code, company, role_title, posting_url,
+def export_application(*, bullets, layout, market, country_code, company, role_title, posting_url,
                         score, review_summary, eligibility_short):
     folder = dated_folder(market, country_code)
     pdf_name = resume_filename(role_title, company, market, country_code)
     pdf_path = folder / pdf_name
     docx_path = folder / (pdf_name[:-4] + ".docx")
 
-    render_resume_docx(bullets, docx_path)
+    render_resume_docx(bullets, layout, docx_path)
     convert_to_pdf(docx_path, pdf_path)
-    verification = verify_pdf(pdf_path)
+    expected_sections = [
+        s for s in SECTIONS
+        if any(e["section"] == s and e["included"] for e in layout["entries"])
+    ]
+    verification = verify_pdf(pdf_path, expected_sections)
     docx_path.unlink(missing_ok=True)
 
     logged = False
