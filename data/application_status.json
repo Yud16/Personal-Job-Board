@@ -3,6 +3,14 @@
     "changed_at": "2026-09-06",
     "status": "Applied"
   },
+  "INTL::2026-09-13::cello::software engineer": {
+    "changed_at": "2026-09-13",
+    "status": "Applied"
+  },
+  "INTL::2026-09-13::playpower labs::software engineer": {
+    "changed_at": "2026-09-13",
+    "status": "Applied"
+  },
   "INTL::https://flix.careers/job/?jobid=8485129002": {
     "changed_at": null,
     "status": "Applied"
@@ -135,6 +143,26 @@
     "changed_at": null,
     "status": "Applied"
   },
+  "UK::2026-09-13::Knutsford::2027 Technology Developer Graduate Programme": {
+    "changed_at": "2026-09-13",
+    "status": "Applied"
+  },
+  "UK::2026-09-13::LSEG::Index Distribution Software Engineer": {
+    "changed_at": "2026-09-13",
+    "status": "Applied"
+  },
+  "UK::2026-09-13::konrad group::software engineer": {
+    "changed_at": "2026-09-13",
+    "status": "Applied"
+  },
+  "UK::2026-09-13::quantcast::software engineer": {
+    "changed_at": "2026-09-13",
+    "status": "Applied"
+  },
+  "UK::https://simplify.jobs/matches/p/e333e5c8-88c3-48f3-8e8d-4a5fb4d7f806/Full-Stack-AI-Engineer?matchGroup=1": {
+    "changed_at": "2026-09-13",
+    "status": "Applied"
+  },
   "UK::https://to.indeed.com/aa28crq9xvdz": {
     "changed_at": null,
     "status": "Rejection"
@@ -188,8 +216,8 @@
     "status": "Rejection"
   },
   "UK::https://to.indeed.com/aag4zyg6n89w": {
-    "changed_at": null,
-    "status": "Applied"
+    "changed_at": "2026-09-13",
+    "status": "Interview"
   },
   "UK::https://to.indeed.com/aagf2p2p6dvp": {
     "changed_at": null,
@@ -502,6 +530,10 @@
   "US::2026-08-20::NetJets::software engineer, associate (columbus, oh)": {
     "changed_at": "2026-08-29",
     "status": "Rejection"
+  },
+  "US::2026-09-13::elevenlabs::full stack engineer": {
+    "changed_at": "2026-09-13",
+    "status": "Applied"
   },
   "US::https://careers-appliedsystems.icims.com/jobs/7318/job?mobile=true&needsRedirect=false&utm_source=Simplify": {
     "changed_at": "2026-08-18",

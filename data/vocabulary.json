@@ -226,5 +226,97 @@
   {
     "term": "database",
     "aliases": []
+  },
+  {
+    "term": "postgres",
+    "aliases": [
+      "postgresql"
+    ]
+  },
+  {
+    "term": "iot",
+    "aliases": []
+  },
+  {
+    "term": "web sockets",
+    "aliases": []
+  },
+  {
+    "term": "express js",
+    "aliases": [
+      "express",
+      "expressjs",
+      "express.js"
+    ]
+  },
+  {
+    "term": "socket.io",
+    "aliases": []
+  },
+  {
+    "term": "mqtt",
+    "aliases": []
+  },
+  {
+    "term": "next.js",
+    "aliases": []
+  },
+  {
+    "term": "jenkins",
+    "aliases": []
+  },
+  {
+    "term": "dynamo",
+    "aliases": [
+      "dynamodb"
+    ]
+  },
+  {
+    "term": "terraform",
+    "aliases": []
+  },
+  {
+    "term": "aws lambda",
+    "aliases": []
+  },
+  {
+    "term": "lambda",
+    "aliases": [
+      "aws lambda"
+    ]
+  },
+  {
+    "term": "rpc",
+    "aliases": [
+      "rpcs"
+    ]
+  },
+  {
+    "term": "flutter",
+    "aliases": []
+  },
+  {
+    "term": "kotlin",
+    "aliases": []
+  },
+  {
+    "term": "swift",
+    "aliases": []
+  },
+  {
+    "term": "rust",
+    "aliases": []
+  },
+  {
+    "term": "langchain",
+    "aliases": []
+  },
+  {
+    "term": "fastapi",
+    "aliases": []
+  },
+  {
+    "term": "gcp",
+    "aliases": []
   }
 ]

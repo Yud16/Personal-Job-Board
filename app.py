@@ -24,6 +24,10 @@ DATE_RE = re.compile(r"^(\d{4})-(\d{2})-(\d{2})$")
 
 STATUS_OPTIONS = ["Not applied yet", "Applied", "Interview", "Rejection", "Landed"]
 
+UK_CSV_HEADER = ["date_found", "title_query", "company", "role_title", "posting_url", "score", "resume_variant", "hard_blocker", "window", "tailored", "resume_pdf", "cl_pdf", "applied_status", "legacy_source", "review_summary"]
+US_CSV_HEADER = ["date_found", "title_query", "company", "role_title", "posting_url", "score", "resume_variant", "sponsorship_signal", "window", "tailored", "resume_pdf", "cl_pdf", "applied_status", "legacy_source", "review_summary"]
+INTL_CSV_HEADER = ["date_found", "country_code", "category", "company", "role_title", "posting_url", "score", "sponsorship_signal", "window", "tailored", "resume_pdf", "cl_pdf", "applied_status", "review_summary"]
+
 app = Flask(__name__)
 
 
@@ -120,6 +124,10 @@ def _canonicalize_keywords(keywords, vocabulary):
             canonical_keywords.append(kw)
             vocab_changed = True
     return canonical_keywords, vocab_changed
+
+
+def _entry_included_map(layout):
+    return {(e["section"], e["entry"]): e["included"] for e in layout["entries"]}
 
 
 def posting_key(market, posting_url, date_found, company, role_title):
@@ -276,6 +284,60 @@ def api_restore():
     return jsonify({"ok": True, "key": key})
 
 
+@app.route("/api/add-job", methods=["POST"])
+def api_add_job():
+    data = request.get_json(force=True, silent=True) or {}
+    market = data.get("market")
+    company = (data.get("company") or "").strip()
+    role_title = (data.get("role_title") or "").strip()
+    posting_url = (data.get("posting_url") or "").strip()
+    country_code = (data.get("country_code") or "").strip().upper()
+    status = data.get("status") or "Not applied yet"
+
+    if market not in ("UK", "US", "INTL"):
+        return jsonify({"error": "market must be UK, US, or INTL"}), 400
+    if not company or not role_title:
+        return jsonify({"error": "company and role title are required"}), 400
+    if status not in STATUS_OPTIONS:
+        return jsonify({"error": "invalid status"}), 400
+
+    if market == "UK":
+        path, header = UK_CSV, UK_CSV_HEADER
+    elif market == "US":
+        path, header = US_CSV, US_CSV_HEADER
+    else:
+        path, header = INTL_CSV, INTL_CSV_HEADER
+
+    if posting_url and path.exists():
+        with open(path, newline="", encoding="utf-8-sig") as f:
+            for row in csv.DictReader(f):
+                if (row.get("posting_url") or "").strip() == posting_url:
+                    return jsonify({"error": "a posting with this URL is already logged"}), 409
+
+    date_found = datetime.date.today().isoformat()
+
+    if market == "INTL":
+        row = [date_found, country_code, "manual", company, role_title, posting_url, "", "", "MANUAL", "no", "", "", "", ""]
+    else:
+        row = [date_found, "manual", company, role_title, posting_url, "", "", "", "MANUAL", "no", "", "", "", "Manual add", ""]
+
+    is_new_file = not path.exists()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "a", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        if is_new_file:
+            writer.writerow(header)
+        writer.writerow(row)
+
+    key = posting_key(market, posting_url, date_found, company, role_title)
+    if status != "Not applied yet":
+        overrides = load_status_overrides()
+        overrides[key] = {"status": status, "changed_at": date_found}
+        save_status_overrides(overrides)
+
+    return jsonify({"ok": True, "key": key})
+
+
 @app.route("/api/possible-replies")
 def api_possible_replies():
     replies = load_possible_replies()
@@ -311,6 +373,7 @@ def api_state():
         "vocabulary": storage.get_vocabulary(),
         "profile": storage.get_profile(),
         "entry_dates": export.get_template_entry_dates(),
+        "layout": storage.get_layout(),
     })
 
 
@@ -328,7 +391,12 @@ def api_analyze():
     vocabulary = storage.get_vocabulary()
     profile = storage.get_profile()
     bullets = storage.get_bullets()
-    included_bullets = [b for b in bullets if b.get("included", True)]
+    layout = storage.get_layout()
+    entry_included = _entry_included_map(layout)
+    included_bullets = [
+        b for b in bullets
+        if b.get("included", True) and entry_included.get((b["section"], b["entry"]), True)
+    ]
 
     if market_override:
         market = market_override
@@ -354,6 +422,7 @@ def api_analyze():
     matched_keywords = [kw for kw in required_keywords if kw in included_keyword_set]
     missing_keywords = [kw for kw in required_keywords if kw not in included_keyword_set]
 
+    visible_bullets = [b for b in bullets if entry_included.get((b["section"], b["entry"]), True)]
     review = scoring.build_review(
         matched_keywords=matched_keywords,
         missing_keywords=missing_keywords,
@@ -361,7 +430,7 @@ def api_analyze():
         years_have=profile["years_of_experience"],
         market=market,
         eligibility=eligibility,
-        bullets=bullets,
+        bullets=visible_bullets,
     )
 
     return jsonify({
@@ -453,6 +522,58 @@ def api_delete_bullet(bullet_id):
     return jsonify({"ok": True})
 
 
+@app.route("/api/entries/<entry_id>", methods=["PATCH"])
+def api_update_entry(entry_id):
+    body = request.get_json(force=True) or {}
+    layout = storage.get_layout()
+    target = next((e for e in layout["entries"] if e["id"] == entry_id), None)
+    if target is None:
+        return jsonify({"error": "entry not found"}), 404
+
+    bullets = None
+    if "entry" in body:
+        new_name = (body["entry"] or "").strip()
+        if not new_name:
+            return jsonify({"error": "entry name cannot be empty"}), 400
+        duplicate = next((e for e in layout["entries"]
+                           if e["id"] != entry_id and e["section"] == target["section"]
+                           and e["entry"].lower() == new_name.lower()), None)
+        if duplicate:
+            return jsonify({"error": "another entry in this section already has that name"}), 409
+        old_name = target["entry"]
+        target["entry"] = new_name
+        if old_name != new_name:
+            bullets = storage.get_bullets()
+            for b in bullets:
+                if b["section"] == target["section"] and b["entry"] == old_name:
+                    b["entry"] = new_name
+            storage.save_bullets(bullets)
+    if "included" in body:
+        target["included"] = bool(body["included"])
+    if "order" in body:
+        target["order"] = body["order"]
+
+    storage.save_layout(layout)
+    response = {"entry": target, "layout": layout}
+    if bullets is not None:
+        response["bullets"] = bullets
+    return jsonify(response)
+
+
+@app.route("/api/sections", methods=["PATCH"])
+def api_update_sections():
+    body = request.get_json(force=True) or {}
+    new_order = body.get("section_order")
+    valid = {"Education", "Projects", "Work Experience"}
+    if not isinstance(new_order, list) or set(new_order) != valid or len(new_order) != 3:
+        return jsonify({"error": "section_order must be a permutation of Education, Projects, Work Experience"}), 400
+
+    layout = storage.get_layout()
+    layout["section_order"] = new_order
+    storage.save_layout(layout)
+    return jsonify({"layout": layout})
+
+
 @app.route("/api/vocabulary", methods=["POST"])
 def api_add_vocabulary():
     body = request.get_json(force=True) or {}
@@ -491,9 +612,10 @@ def api_export():
         return jsonify({"error": "score is required"}), 400
 
     bullets = storage.get_bullets()
+    layout = storage.get_layout()
     try:
         result = export.export_application(
-            bullets=bullets, market=market, country_code=country_code,
+            bullets=bullets, layout=layout, market=market, country_code=country_code,
             company=company, role_title=role_title, posting_url=posting_url,
             score=score, review_summary=review_summary, eligibility_short=eligibility_short,
         )

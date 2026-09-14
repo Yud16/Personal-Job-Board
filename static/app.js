@@ -45,6 +45,21 @@ const detailPanel = document.getElementById("detailPanel");
 const closeDetail = document.getElementById("closeDetail");
 const detailStatusSelect = document.getElementById("detailStatus");
 
+const addJobBtn = document.getElementById("addJobBtn");
+const addJobBackdrop = document.getElementById("addJobBackdrop");
+const closeAddJob = document.getElementById("closeAddJob");
+const cancelAddJob = document.getElementById("cancelAddJob");
+const addJobForm = document.getElementById("addJobForm");
+const addJobCompany = document.getElementById("addJobCompany");
+const addJobRole = document.getElementById("addJobRole");
+const addJobMarket = document.getElementById("addJobMarket");
+const addJobCountryField = document.getElementById("addJobCountryField");
+const addJobCountry = document.getElementById("addJobCountry");
+const addJobStatus = document.getElementById("addJobStatus");
+const addJobUrl = document.getElementById("addJobUrl");
+const addJobError = document.getElementById("addJobError");
+const submitAddJob = document.getElementById("submitAddJob");
+
 async function loadPostings() {
   const res = await fetch("/api/postings");
   postings = await res.json();
@@ -384,16 +399,85 @@ function closePanel() {
   render();
 }
 
+function populateAddJobStatusOptions() {
+  addJobStatus.innerHTML = "";
+  for (const status of STATUS_OPTIONS) {
+    const opt = document.createElement("option");
+    opt.value = status;
+    opt.textContent = status;
+    addJobStatus.appendChild(opt);
+  }
+}
+
+function openAddJobModal() {
+  addJobForm.reset();
+  addJobMarket.value = "UK";
+  addJobCountryField.hidden = true;
+  addJobError.hidden = true;
+  addJobBackdrop.hidden = false;
+  addJobCompany.focus();
+}
+
+function closeAddJobModal() {
+  addJobBackdrop.hidden = true;
+}
+
+async function submitAddJobForm(e) {
+  e.preventDefault();
+  addJobError.hidden = true;
+  submitAddJob.disabled = true;
+  try {
+    const res = await fetch("/api/add-job", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        company: addJobCompany.value.trim(),
+        role_title: addJobRole.value.trim(),
+        market: addJobMarket.value,
+        country_code: addJobCountry.value.trim(),
+        posting_url: addJobUrl.value.trim(),
+        status: addJobStatus.value,
+      }),
+    });
+    const result = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      addJobError.textContent = result.error || "Could not add job.";
+      addJobError.hidden = false;
+      return;
+    }
+    closeAddJobModal();
+    await loadPostings();
+  } catch (err) {
+    addJobError.textContent = "Could not add job: " + err.message;
+    addJobError.hidden = false;
+  } finally {
+    submitAddJob.disabled = false;
+  }
+}
+
 closeDetail.addEventListener("click", closePanel);
 detailBackdrop.addEventListener("click", (e) => {
   if (e.target === detailBackdrop) closePanel();
 });
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape" && !detailBackdrop.hidden) closePanel();
+  if (e.key === "Escape" && !addJobBackdrop.hidden) closeAddJobModal();
 });
 marketFilter.addEventListener("change", render);
 variantFilter.addEventListener("change", render);
 refreshBtn.addEventListener("click", loadPostings);
 
+addJobBtn.addEventListener("click", openAddJobModal);
+closeAddJob.addEventListener("click", closeAddJobModal);
+cancelAddJob.addEventListener("click", closeAddJobModal);
+addJobBackdrop.addEventListener("click", (e) => {
+  if (e.target === addJobBackdrop) closeAddJobModal();
+});
+addJobMarket.addEventListener("change", () => {
+  addJobCountryField.hidden = addJobMarket.value !== "INTL";
+});
+addJobForm.addEventListener("submit", submitAddJobForm);
+
 buildStatusFilter();
+populateAddJobStatusOptions();
 loadPostings();

@@ -9,29 +9,18 @@
     "order": 1
   },
   {
-    "id": "poly-planner-1",
-    "section": "Projects",
-    "entry": "Full-Stack Developer, Poly Planner Pro",
-    "text": "TEST TEXT MARKER",
-    "keywords": [
-      "Java",
-      "TESTKEYWORDXYZ"
-    ],
-    "included": false,
-    "order": 1
-  },
-  {
     "id": "poly-planner-3",
     "section": "Projects",
     "entry": "Full-Stack Developer, Poly Planner Pro",
-    "text": "Built a responsive student-facing interface with React and TypeScript so changes to a schedule update immediately, then deployed to AWS for reliable user access.",
+    "text": "Built a responsive student-facing interface with React, TypeScript, and JavaScript so changes to a schedule update immediately, then deployed to AWS for reliable user access.",
     "keywords": [
       "React",
       "TypeScript",
-      "AWS"
+      "AWS",
+      "JavaScript"
     ],
     "included": true,
-    "order": 4
+    "order": 3
   },
   {
     "id": "orderinsite-1",
@@ -53,7 +42,7 @@
     "keywords": [
       "SQL"
     ],
-    "included": true,
+    "included": false,
     "order": 2
   },
   {
@@ -78,7 +67,7 @@
       "JavaScript"
     ],
     "included": true,
-    "order": 2
+    "order": 4
   },
   {
     "id": "innoidea-3",
@@ -107,23 +96,7 @@
       "front-end"
     ],
     "included": false,
-    "order": 13
-  },
-  {
-    "id": "full-stack-developer-pol-custom-1",
-    "section": "Projects",
-    "entry": "Full-Stack Developer, Poly Planner Pro",
-    "text": "Built a secure backend with REST APIs in Java and Spring Boot, using JUnit and Mockito unit tests to ensure protected data persistence and multi-user scalability.",
-    "keywords": [
-      "backend",
-      "REST API",
-      "Java",
-      "Spring Boot",
-      "JUnit",
-      "Mockito"
-    ],
-    "included": true,
-    "order": 2
+    "order": 4
   },
   {
     "id": "full-stack-developer-pol-custom-3",
@@ -147,9 +120,61 @@
     "id": "full-stack-developer-pol-custom-4",
     "section": "Projects",
     "entry": "Full-Stack Developer, Poly Planner Pro",
-    "text": "Built a website using Java, REST API, and React that helped Cal Poly students plan their class schedules, working directly with the school's Engineering Student Services team in an Agile workflow to reach over 150 students and staff since launch.",
-    "keywords": [],
+    "text": "Built a website using Java, Spring Boot, REST API, and React that helped Cal Poly students plan their class schedules, working directly with the school's Engineering Student Services team in an Agile workflow to reach over 150 students and staff since launch.",
+    "keywords": [
+      "Java",
+      "Spring Boot",
+      "React",
+      "REST API",
+      "Agile"
+    ],
     "included": true,
-    "order": 2
+    "order": 1
+  },
+  {
+    "id": "full-stack-application-s-custom-1",
+    "section": "Projects",
+    "entry": "Sensor Monitoring Dashboard",
+    "text": "Built a full-stack IoT dashboard that used JavaScript, Web Sockets, and PostgreSQL to collect live sensor data and displayed it on a website in real time.",
+    "keywords": [
+      "JavaScript",
+      "postgres",
+      "iot",
+      "web sockets"
+    ],
+    "included": true,
+    "order": 7
+  },
+  {
+    "id": "full-stack-application-s-custom-2",
+    "section": "Projects",
+    "entry": "Sensor Monitoring Dashboard",
+    "text": "Used a MQTT broker to stream data from simulated sensors into a Node.js/Express backend, stored readings in Postgres, and pushed live updates to a Next.js dashboard via Socket.io. Containerized the app with Docker for reproducible deployment.",
+    "keywords": [
+      "socket.io",
+      "mqtt",
+      "Node.js",
+      "express js",
+      "postgres",
+      "next.js",
+      "Docker",
+      "backend"
+    ],
+    "included": true,
+    "order": 8
+  },
+  {
+    "id": "distributed-search-engin-custom-1",
+    "section": "Projects",
+    "entry": "Distributed Search Engine",
+    "text": "Built a web crawler in Go using RPCs and concurrent workers to crawl and process urls in parallel. Used Python to analyze results and Docker for reproducible deployment.",
+    "keywords": [
+      "Go",
+      "rpc",
+      "Python",
+      "Docker"
+    ],
+    "included": true,
+    "order": 1
   }
 ]

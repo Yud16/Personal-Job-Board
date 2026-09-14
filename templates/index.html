@@ -21,6 +21,7 @@
       </select>
       <div class="status-filter" id="statusFilter"></div>
       <button id="refreshBtn">Refresh</button>
+      <button id="addJobBtn">+ Add job</button>
       <a class="nav-link" href="/tailor">Match &amp; tailor</a>
       <a class="nav-link" href="/replies">Possible replies</a>
     </div>
@@ -79,6 +80,50 @@
       <div class="detail-row">
         <a id="detailUrl" href="#" target="_blank" rel="noopener">View posting</a>
       </div>
+    </section>
+  </div>
+
+  <div class="modal-backdrop" id="addJobBackdrop" hidden>
+    <section class="detail-panel add-job-panel" id="addJobPanel" role="dialog" aria-modal="true">
+      <button class="close-btn" id="closeAddJob" type="button">&times;</button>
+      <h2>Add job</h2>
+      <form id="addJobForm">
+        <div class="form-field">
+          <label for="addJobCompany">Company</label>
+          <input id="addJobCompany" type="text" required>
+        </div>
+        <div class="form-field">
+          <label for="addJobRole">Role title</label>
+          <input id="addJobRole" type="text" required>
+        </div>
+        <div class="form-row">
+          <div class="form-field">
+            <label for="addJobMarket">Market</label>
+            <select id="addJobMarket">
+              <option value="UK">UK</option>
+              <option value="US">US</option>
+              <option value="INTL">Intl</option>
+            </select>
+          </div>
+          <div class="form-field" id="addJobCountryField" hidden>
+            <label for="addJobCountry">Country code</label>
+            <input id="addJobCountry" type="text" maxlength="2" placeholder="DE">
+          </div>
+          <div class="form-field">
+            <label for="addJobStatus">Status</label>
+            <select id="addJobStatus"></select>
+          </div>
+        </div>
+        <div class="form-field">
+          <label for="addJobUrl">Posting link (optional)</label>
+          <input id="addJobUrl" type="text" placeholder="https://...">
+        </div>
+        <p class="form-error" id="addJobError" hidden></p>
+        <div class="form-actions">
+          <button type="button" id="cancelAddJob">Cancel</button>
+          <button type="submit" class="btn-primary" id="submitAddJob">Add job</button>
+        </div>
+      </form>
     </section>
   </div>
 

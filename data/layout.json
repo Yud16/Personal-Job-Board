@@ -1,0 +1,57 @@
+{
+  "section_order": [
+    "Education",
+    "Projects",
+    "Work Experience"
+  ],
+  "entries": [
+    {
+      "id": "education--bachelor-of-science-in-computer-science-",
+      "section": "Education",
+      "entry": "Bachelor of Science in Computer Science, California Polytechnic State University, San Luis Obispo",
+      "template_key": "Bachelor of Science in Computer Science, California Polytechnic State University, San Luis Obispo",
+      "included": true,
+      "order": 1
+    },
+    {
+      "id": "projects--full-stack-developer-poly-planner-pro",
+      "section": "Projects",
+      "entry": "Full-Stack Developer, Poly Planner Pro",
+      "template_key": "Full-Stack Developer, Poly Planner Pro",
+      "included": true,
+      "order": 1
+    },
+    {
+      "id": "work-experience--data-analyst-intern-orderinsite-californ",
+      "section": "Work Experience",
+      "entry": "Data Analyst Intern, OrderInsite, California",
+      "template_key": "Data Analyst Intern, OrderInsite, California",
+      "included": true,
+      "order": 1
+    },
+    {
+      "id": "work-experience--software-engineer-intern-inno-idea-limit",
+      "section": "Work Experience",
+      "entry": "Software Engineer Intern, Inno Idea Limited, Hong Kong",
+      "template_key": "Software Engineer Intern, Inno Idea Limited, Hong Kong",
+      "included": true,
+      "order": 2
+    },
+    {
+      "id": "projects--full-stack-application-sensor-monitoring",
+      "section": "Projects",
+      "entry": "Sensor Monitoring Dashboard",
+      "template_key": "Full-Stack Application, Sensor Monitoring Dashboard",
+      "included": true,
+      "order": 2
+    },
+    {
+      "id": "projects--distributed-search-engine",
+      "section": "Projects",
+      "entry": "Distributed Search Engine",
+      "template_key": "Distributed Search Engine",
+      "included": false,
+      "order": 3
+    }
+  ]
+}
