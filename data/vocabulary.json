@@ -294,5 +294,29 @@
   {
     "term": "flutter",
     "aliases": []
+  },
+  {
+    "term": "kotlin",
+    "aliases": []
+  },
+  {
+    "term": "swift",
+    "aliases": []
+  },
+  {
+    "term": "rust",
+    "aliases": []
+  },
+  {
+    "term": "langchain",
+    "aliases": []
+  },
+  {
+    "term": "fastapi",
+    "aliases": []
+  },
+  {
+    "term": "gcp",
+    "aliases": []
   }
 ]

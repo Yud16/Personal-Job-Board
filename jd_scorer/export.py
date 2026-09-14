@@ -1,4 +1,5 @@
 import csv
+import multiprocessing
 import shutil
 import subprocess
 from copy import deepcopy
@@ -284,9 +285,37 @@ def render_resume_docx(bullets, layout, output_path):
 
 # --- PDF conversion + verification --------------------------------------------
 
-def convert_to_pdf(docx_path, pdf_path):
-    from docx2pdf import convert
-    convert(str(docx_path), str(pdf_path))
+def _convert_worker(docx_path, pdf_path, queue):
+    try:
+        from docx2pdf import convert
+        convert(docx_path, pdf_path)
+        queue.put(None)
+    except Exception as e:
+        queue.put(str(e))
+
+
+def convert_to_pdf(docx_path, pdf_path, timeout=90):
+    """Runs docx2pdf (drives real Microsoft Word via COM automation) in a
+    subprocess with a timeout. Without this, a Word dialog stuck waiting for
+    input (a compatibility prompt, an autosave-recovery notice) hangs this
+    call -- and the whole export request -- forever with no feedback, which
+    is exactly what a stuck export looks like from the UI.
+    """
+    ctx = multiprocessing.get_context("spawn")
+    queue = ctx.Queue()
+    proc = ctx.Process(target=_convert_worker, args=(str(docx_path), str(pdf_path), queue))
+    proc.start()
+    proc.join(timeout)
+    if proc.is_alive():
+        proc.terminate()
+        proc.join()
+        raise ExportError(
+            f"PDF conversion timed out after {timeout}s -- Microsoft Word is likely stuck "
+            "on a dialog box. Check for a hidden Word window, close it, and try exporting again."
+        )
+    error = queue.get() if not queue.empty() else None
+    if error:
+        raise ExportError(f"PDF conversion failed: {error}")
     if not Path(pdf_path).exists():
         raise ExportError("docx2pdf did not produce a PDF file.")
     return pdf_path

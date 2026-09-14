@@ -24,6 +24,10 @@ DATE_RE = re.compile(r"^(\d{4})-(\d{2})-(\d{2})$")
 
 STATUS_OPTIONS = ["Not applied yet", "Applied", "Interview", "Rejection", "Landed"]
 
+UK_CSV_HEADER = ["date_found", "title_query", "company", "role_title", "posting_url", "score", "resume_variant", "hard_blocker", "window", "tailored", "resume_pdf", "cl_pdf", "applied_status", "legacy_source", "review_summary"]
+US_CSV_HEADER = ["date_found", "title_query", "company", "role_title", "posting_url", "score", "resume_variant", "sponsorship_signal", "window", "tailored", "resume_pdf", "cl_pdf", "applied_status", "legacy_source", "review_summary"]
+INTL_CSV_HEADER = ["date_found", "country_code", "category", "company", "role_title", "posting_url", "score", "sponsorship_signal", "window", "tailored", "resume_pdf", "cl_pdf", "applied_status", "review_summary"]
+
 app = Flask(__name__)
 
 
@@ -277,6 +281,60 @@ def api_restore():
     dismissed = load_dismissed()
     dismissed.discard(key)
     save_dismissed(dismissed)
+    return jsonify({"ok": True, "key": key})
+
+
+@app.route("/api/add-job", methods=["POST"])
+def api_add_job():
+    data = request.get_json(force=True, silent=True) or {}
+    market = data.get("market")
+    company = (data.get("company") or "").strip()
+    role_title = (data.get("role_title") or "").strip()
+    posting_url = (data.get("posting_url") or "").strip()
+    country_code = (data.get("country_code") or "").strip().upper()
+    status = data.get("status") or "Not applied yet"
+
+    if market not in ("UK", "US", "INTL"):
+        return jsonify({"error": "market must be UK, US, or INTL"}), 400
+    if not company or not role_title:
+        return jsonify({"error": "company and role title are required"}), 400
+    if status not in STATUS_OPTIONS:
+        return jsonify({"error": "invalid status"}), 400
+
+    if market == "UK":
+        path, header = UK_CSV, UK_CSV_HEADER
+    elif market == "US":
+        path, header = US_CSV, US_CSV_HEADER
+    else:
+        path, header = INTL_CSV, INTL_CSV_HEADER
+
+    if posting_url and path.exists():
+        with open(path, newline="", encoding="utf-8-sig") as f:
+            for row in csv.DictReader(f):
+                if (row.get("posting_url") or "").strip() == posting_url:
+                    return jsonify({"error": "a posting with this URL is already logged"}), 409
+
+    date_found = datetime.date.today().isoformat()
+
+    if market == "INTL":
+        row = [date_found, country_code, "manual", company, role_title, posting_url, "", "", "MANUAL", "no", "", "", "", ""]
+    else:
+        row = [date_found, "manual", company, role_title, posting_url, "", "", "", "MANUAL", "no", "", "", "", "Manual add", ""]
+
+    is_new_file = not path.exists()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "a", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        if is_new_file:
+            writer.writerow(header)
+        writer.writerow(row)
+
+    key = posting_key(market, posting_url, date_found, company, role_title)
+    if status != "Not applied yet":
+        overrides = load_status_overrides()
+        overrides[key] = {"status": status, "changed_at": date_found}
+        save_status_overrides(overrides)
+
     return jsonify({"ok": True, "key": key})
 
 

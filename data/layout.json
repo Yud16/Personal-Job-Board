@@ -42,7 +42,7 @@
       "section": "Projects",
       "entry": "Sensor Monitoring Dashboard",
       "template_key": "Full-Stack Application, Sensor Monitoring Dashboard",
-      "included": false,
+      "included": true,
       "order": 2
     },
     {
@@ -50,7 +50,7 @@
       "section": "Projects",
       "entry": "Distributed Search Engine",
       "template_key": "Distributed Search Engine",
-      "included": true,
+      "included": false,
       "order": 3
     }
   ]

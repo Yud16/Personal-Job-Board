@@ -381,6 +381,67 @@ main {
   text-align: center;
 }
 
+.add-job-panel {
+  max-width: 420px;
+}
+
+.add-job-panel h2 {
+  margin: 0 0 16px;
+  font-size: 1.15rem;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 14px;
+  flex: 1;
+}
+
+.form-field label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.form-field input {
+  font-size: 0.9rem;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--text);
+  font-family: inherit;
+}
+
+.form-row {
+  display: flex;
+  gap: 12px;
+}
+
+.form-error {
+  color: var(--status-rejection-text);
+  font-size: 0.85rem;
+  margin: -4px 0 12px;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.btn-primary {
+  background: var(--text);
+  color: #fff;
+  border-color: var(--text);
+}
+
+.btn-primary:hover {
+  background: #34302a;
+}
+
 .nav-link {
   font-size: 0.9rem;
   padding: 8px 12px;
